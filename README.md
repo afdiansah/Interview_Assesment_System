@@ -1,4 +1,3 @@
-<<<<<<< daffa
 # AI Interview Assessment System — Instruksi Proyek
 
 Prototype untuk mengunggah video interview dan mengirim payload JSON ke backend FastAPI.
@@ -94,11 +93,3 @@ Prototype untuk mengunggah video interview dan mengirim payload JSON ke backend 
 ## Lisensi
 
 MIT — gunakan dan modifikasi sesuai kebutuhan.
-
----
-
-Selamat mengembangkan — jika butuh bantuan menyesuaikan redirect atau deployment, beri tahu detail environment Anda.
-=======
-# Interview Assesment System
-Capstone Project Asah by Dicoding 2025
->>>>>>> main
