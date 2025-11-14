@@ -1,29 +1,13 @@
 /* ============================
    Video upload variables
    ============================ */
-const fileInputVideo = document.getElementById("fileInputVideo");
-const previewGridVideo = document.getElementById("previewGridVideo");
-const statusAreaVideo = document.getElementById("statusAreaVideo");
-const participantNameInput = document.getElementById("participantName");
+let fileInputVideo;
+let previewGridVideo;
+let statusAreaVideo;
+let participantNameInput;
 
 let selectedFilesVideo = [];
-
-fileInputVideo.addEventListener("change", (e) =>
-  handleFilesVideo(e.target.files)
-);
-const uploadAreaVideo = document.getElementById("uploadAreaVideo");
-uploadAreaVideo.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  uploadAreaVideo.style.opacity = "0.8";
-});
-uploadAreaVideo.addEventListener("dragleave", () => {
-  uploadAreaVideo.style.opacity = "1";
-});
-uploadAreaVideo.addEventListener("drop", (e) => {
-  e.preventDefault();
-  uploadAreaVideo.style.opacity = "1";
-  if (e.dataTransfer?.files) handleFilesVideo(e.dataTransfer.files);
-});
+let objectUrlsVideo = []; // track created blob URLs so we can revoke reliably
 
 // Replace previous SERVER_MODE/FS fallback logic with simple server upload endpoints
 const FILE_UPLOAD_ENDPOINT = "http://127.0.0.1:8888/upload_file";
@@ -55,14 +39,59 @@ function hideLoading() {
   if (o) o.style.display = "none";
 }
 
-// Upload single file: always POST to server endpoint
-async function uploadOne(index) {
-  const file = selectedFilesVideo[index];
-  if (!file) return null;
-  statusAreaVideo.textContent = `Mengunggah file ${index + 1} ke server...`;
+// --- NEW: inject .status-ready style once and helpers to mark/reset status ---
+let __statusReadyInjected = false;
+function injectStatusReadyStyle() {
+  if (__statusReadyInjected) return;
+  __statusReadyInjected = true;
+  const s = document.createElement("style");
+  s.textContent = `
+    .status-ready {
+      background: linear-gradient(180deg,#28a745,#1e7e34);
+      color: #fff !important;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      display: inline-block;
+      box-shadow: 0 2px 6px rgba(30,126,52,0.25);
+    }
+  `;
+  document.head.appendChild(s);
+}
+function setStatusReady(el, message) {
+  if (!el) return;
+  injectStatusReadyStyle();
+  if (typeof message === "string") el.textContent = message;
+  el.classList.add("status-ready");
+}
+function resetStatus(el, message) {
+  if (!el) return;
+  el.classList.remove("status-ready");
+  if (typeof message === "string") el.textContent = message;
+}
+
+// Upload single file: accept either index or File object; on failure remove from preview
+async function uploadOne(indexOrFile) {
+  // resolve file and original index snapshot
+  let originalFile = null;
+  let originalIndex = -1;
+  if (typeof indexOrFile === "number") {
+    originalIndex = indexOrFile;
+    originalFile = selectedFilesVideo[originalIndex] || null;
+  } else {
+    originalFile = indexOrFile || null;
+    // don't rely on index here; will look up current index later
+  }
+
+  if (!originalFile) return null;
+
+  // show uploading state and ensure previous "ready" styling is removed
+  resetStatus(statusAreaVideo);
+  statusAreaVideo.textContent = `Mengunggah file ke server...`;
+
   try {
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", originalFile);
     const res = await fetch(FILE_UPLOAD_ENDPOINT, {
       method: "POST",
       body: fd,
@@ -71,14 +100,67 @@ async function uploadOne(index) {
     const j = await res.json();
     const url = j?.url || null;
     const name = j?.name || null;
-    if (url) uploadedUrls[index] = url;
-    if (name) uploadedNames[index] = name;
+
+    // find current index of this file (may have moved); update arrays at that index
+    const curIndex = selectedFilesVideo.indexOf(originalFile);
+    if (curIndex >= 0) {
+      if (url) uploadedUrls[curIndex] = url;
+      if (name) uploadedNames[curIndex] = name;
+    } else {
+      // fallback: if originalIndex still valid, set there
+      if (originalIndex >= 0) {
+        if (url) uploadedUrls[originalIndex] = url;
+        if (name) uploadedNames[originalIndex] = name;
+      }
+    }
+
     renderPreviewsVideo();
-    statusAreaVideo.textContent = `File ${index + 1} terunggah ke server.`;
+    resetStatus(statusAreaVideo, `File terunggah ke server.`);
     return url;
   } catch (err) {
     console.error("Upload to server error", err);
-    statusAreaVideo.textContent = `Gagal unggah file ${index + 1} ke server.`;
+    // remove file from selection if still present
+    try {
+      const curIndex = selectedFilesVideo.indexOf(originalFile);
+      if (curIndex >= 0) {
+        // attempt server delete if it has a name
+        const serverName = uploadedNames[curIndex];
+        if (serverName) {
+          try {
+            await fetch(DELETE_ENDPOINT, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: serverName }),
+            });
+          } catch (e) {
+            // ignore
+          }
+        }
+        // revoke object URL if any
+        try {
+          if (objectUrlsVideo[curIndex]) {
+            URL.revokeObjectURL(objectUrlsVideo[curIndex]);
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        // remove entries
+        selectedFilesVideo.splice(curIndex, 1);
+        uploadedUrls.splice(curIndex, 1);
+        uploadedNames.splice(curIndex, 1);
+        objectUrlsVideo.splice(curIndex, 1);
+        // re-render previews and update clear button visibility
+        renderPreviewsVideo();
+        updateClearButtonsVisibility();
+      }
+    } catch (e) {
+      /* ignore removal errors */
+    }
+
+    resetStatus(
+      statusAreaVideo,
+      `Gagal unggah file ke server. File dihapus dari preview.`
+    );
     return null;
   }
 }
@@ -101,46 +183,167 @@ function handleFilesVideo(fileList) {
   }
   renderPreviewsVideo();
 
-  // Upload each new file automatically (do not block UI)
-  files.forEach((_, idx) => {
-    const globalIndex = startIndex + idx;
-    uploadOne(globalIndex);
+  // update clear button visibility
+  updateClearButtonsVisibility();
+
+  // Upload each new file automatically (pass the File object to avoid index-shift issues)
+  files.forEach((f) => {
+    uploadOne(f);
   });
 }
 
-// Perbarui renderPreviewsVideo: hanya preview + tombol hapus
+// --- CHANGED: defer DOM element binding & event listener setup until DOM ready ---
+function initUploadModule() {
+  // bind elements (safe even if script included at bottom; helps live-server timing issues)
+  fileInputVideo = document.getElementById("fileInputVideo");
+  previewGridVideo = document.getElementById("previewGridVideo");
+  statusAreaVideo = document.getElementById("statusAreaVideo");
+  participantNameInput = document.getElementById("participantName");
+
+  // bind clear buttons
+  clearAllVideoBtn = document.getElementById("clearAllVideoBtn");
+  clearAllJSONBtn = document.getElementById("clearAllJSONBtn");
+
+  if (fileInputVideo) {
+    fileInputVideo.addEventListener("change", (e) =>
+      handleFilesVideo(e.target.files)
+    );
+  }
+
+  const uploadAreaVideo = document.getElementById("uploadAreaVideo");
+  if (uploadAreaVideo) {
+    uploadAreaVideo.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadAreaVideo.style.opacity = "0.8";
+    });
+    uploadAreaVideo.addEventListener("dragleave", () => {
+      uploadAreaVideo.style.opacity = "1";
+    });
+    uploadAreaVideo.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadAreaVideo.style.opacity = "1";
+      if (e.dataTransfer?.files) handleFilesVideo(e.dataTransfer.files);
+    });
+  }
+
+  // JSON area binding (keep original behaviour)
+  // --- CHANGED: bind globals so renderPreviewsJSON can access them ---
+  fileInputJSON = document.getElementById("fileInputJSON");
+  previewGridJSON = document.getElementById("previewGridJSON");
+  statusAreaJSON = document.getElementById("statusAreaJSON");
+  const uploadAreaJSON = document.getElementById("uploadAreaJSON");
+
+  if (fileInputJSON) {
+    fileInputJSON.addEventListener("change", (e) =>
+      handleFilesJSON(e.target.files)
+    );
+  }
+  if (uploadAreaJSON) {
+    uploadAreaJSON.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadAreaJSON.style.opacity = "0.8";
+    });
+    uploadAreaJSON.addEventListener(
+      "dragleave",
+      () => (uploadAreaJSON.style.opacity = "1")
+    );
+    uploadAreaJSON.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadAreaJSON.style.opacity = "1";
+      if (e.dataTransfer?.files) handleFilesJSON(e.dataTransfer.files);
+    });
+  }
+
+  // ensure initial visibility correct
+  updateClearButtonsVisibility();
+}
+
+// initialize when DOM ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initUploadModule);
+} else {
+  initUploadModule();
+}
+
+// --- CHANGED: renderPreviewsVideo now uses a 16:9 wrapper so previews keep 16:9 aspect ratio ---
 function renderPreviewsVideo() {
+  // revoke any previously created object URLs that are no longer used
+  if (objectUrlsVideo.length) {
+    for (let u of objectUrlsVideo) {
+      try {
+        if (u) URL.revokeObjectURL(u);
+      } catch (e) {
+        /* ignore revoke errors */
+      }
+    }
+  }
+  objectUrlsVideo = [];
+
+  if (!previewGridVideo) return;
   previewGridVideo.innerHTML = "";
   selectedFilesVideo.forEach((file, idx) => {
     const item = document.createElement("div");
     item.className = "preview-item";
 
+    // video element
     const video = document.createElement("video");
     video.className = "preview-video";
     video.controls = true;
     video.preload = "metadata";
-    video.src = URL.createObjectURL(file);
+
+    // create and store object URL
+    const blobUrl = URL.createObjectURL(file);
+    objectUrlsVideo[idx] = blobUrl;
+    video.src = blobUrl;
+
+    // Wrap the video in a responsive 16:9 container
+    const wrapper = document.createElement("div");
+    // 16:9 padding-top = 9/16 * 100% = 56.25%
+    wrapper.style.position = "relative";
+    wrapper.style.width = "100%";
+    wrapper.style.paddingTop = "56.25%";
+    wrapper.style.overflow = "hidden";
+    // video fills the wrapper
+    video.style.position = "absolute";
+    video.style.top = "0";
+    video.style.left = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.objectFit = "contain"; // use "cover" if you prefer crop-fill
+    wrapper.appendChild(video);
+
+    // try to load metadata to ensure preview shows; log errors for debugging
+    video.addEventListener("error", (ev) => {
+      console.error("Video preview error for file:", file.name, ev);
+    });
+    video.addEventListener("loadedmetadata", () => {
+      // no-op, kept for robustness
+    });
 
     const meta = document.createElement("div");
     meta.className = "file-meta";
     meta.innerHTML = `<span title="${file.name}">${
       file.name.length > 30 ? file.name.slice(0, 27) + "..." : file.name
     }</span>
-							  <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>`;
+								  <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>`;
 
     const actions = document.createElement("div");
     actions.style.marginTop = "8px";
-
-    // Hanya tombol Hapus — tidak menampilkan tombol Upload atau link hasil upload
     actions.innerHTML = `<button class="btn btn-outline" onclick="removeFileVideo(${idx})"><i class="fas fa-trash"></i> Hapus</button>`;
 
-    item.appendChild(video);
+    // append wrapper (containing video) instead of raw video
+    item.appendChild(wrapper);
     item.appendChild(meta);
     item.appendChild(actions);
     previewGridVideo.appendChild(item);
   });
 
-  statusAreaVideo.textContent = `${selectedFilesVideo.length} file siap diproses.`;
+  if (statusAreaVideo) {
+    resetStatus(
+      statusAreaVideo,
+      `${selectedFilesVideo.length} file siap diproses.`
+    );
+  }
 }
 
 // Hapus file: request server to delete file (if uploaded)
@@ -157,10 +360,24 @@ async function removeFileVideo(index) {
       console.warn("Gagal menghapus file di server", e);
     }
   }
+
+  // revoke object URL if present
+  try {
+    if (objectUrlsVideo[index]) {
+      URL.revokeObjectURL(objectUrlsVideo[index]);
+    }
+  } catch (e) {
+    /* ignore */
+  }
+
   selectedFilesVideo.splice(index, 1);
   uploadedUrls.splice(index, 1);
   uploadedNames.splice(index, 1);
+  objectUrlsVideo.splice(index, 1);
   renderPreviewsVideo();
+
+  // update clear button visibility
+  updateClearButtonsVisibility();
 }
 
 // Hapus semua: delete all uploaded files on server (best-effort)
@@ -177,12 +394,25 @@ async function clearAllVideo() {
       console.warn("Gagal menghapus di server", n, e);
     }
   }
+
+  // revoke any blob URLs
+  try {
+    for (let u of objectUrlsVideo) {
+      if (u) URL.revokeObjectURL(u);
+    }
+  } catch (e) {
+    /* ignore */
+  }
   selectedFilesVideo = [];
   uploadedUrls = [];
   uploadedNames = [];
-  previewGridVideo.innerHTML = "";
-  statusAreaVideo.textContent = "Tidak ada file dipilih.";
-  participantNameInput.value = "";
+  objectUrlsVideo = [];
+  if (previewGridVideo) previewGridVideo.innerHTML = "";
+  if (statusAreaVideo) resetStatus(statusAreaVideo, "Tidak ada file dipilih.");
+  if (participantNameInput) participantNameInput.value = "";
+
+  // update clear button visibility
+  updateClearButtonsVisibility();
 }
 
 // Membaca file menjadi Base64 (Data URL) tanpa header data:*/*;base64,
@@ -211,15 +441,19 @@ async function buildPayloadVideo() {
     alert("Nama Peserta wajib diisi.");
     throw new Error("No name");
   }
-  statusAreaVideo.textContent =
-    "Mengunggah file ke server (jika perlu) dan membangun payload...";
+  // ensure not styled as "ready" while building
+  resetStatus(
+    statusAreaVideo,
+    "Mengunggah file ke server (jika perlu) dan membangun payload..."
+  );
 
   const interviews = [];
   for (let i = 0; i < selectedFilesVideo.length; i++) {
     const f = selectedFilesVideo[i];
-    statusAreaVideo.textContent = `Memproses file ${i + 1} / ${
-      selectedFilesVideo.length
-    } ...`;
+    resetStatus(
+      statusAreaVideo,
+      `Memproses file ${i + 1} / ${selectedFilesVideo.length} ...`
+    );
 
     let url = uploadedUrls[i] || null;
     if (!url) {
@@ -253,7 +487,8 @@ async function buildPayloadVideo() {
     },
   };
 
-  statusAreaVideo.textContent = "Payload video siap.";
+  // highlight ready state in green
+  setStatusReady(statusAreaVideo, "Payload video siap.");
   return payload;
 }
 
@@ -296,7 +531,6 @@ async function buildAndSendVideo() {
     console.error(err);
     hideLoading();
     statusAreaVideo.textContent = "Terjadi kesalahan saat mengirim.";
-    alert("Error saat mengirim/pemrosesan: " + err.message);
   }
 }
 
@@ -323,27 +557,15 @@ async function downloadPayloadVideo() {
 /* ============================
    JSON upload variables
    ============================ */
-const fileInputJSON = document.getElementById("fileInputJSON");
-const previewGridJSON = document.getElementById("previewGridJSON");
-const statusAreaJSON = document.getElementById("statusAreaJSON");
+// --- CHANGED: declare vars only; bindings are done in initUploadModule to avoid duplicate listeners ---
+let fileInputJSON;
+let previewGridJSON;
+let statusAreaJSON;
 let selectedFilesJSON = [];
 
-fileInputJSON.addEventListener("change", (e) =>
-  handleFilesJSON(e.target.files)
-);
-const uploadAreaJSON = document.getElementById("uploadAreaJSON");
-uploadAreaJSON.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  uploadAreaJSON.style.opacity = "0.8";
-});
-uploadAreaJSON.addEventListener("dragleave", () => {
-  uploadAreaJSON.style.opacity = "1";
-});
-uploadAreaJSON.addEventListener("drop", (e) => {
-  e.preventDefault();
-  uploadAreaJSON.style.opacity = "1";
-  if (e.dataTransfer?.files) handleFilesJSON(e.dataTransfer.files);
-});
+// Note: initUploadModule already locates fileInputJSON / previewGridJSON / statusAreaJSON
+// and attaches listeners. Removing the top-level getElementById/addEventListener prevents
+// the same handler from being invoked twice (one from global scope and one from initUploadModule).
 
 function handleFilesJSON(fileList) {
   // filter hanya file JSON
@@ -363,11 +585,16 @@ function handleFilesJSON(fileList) {
   renderPreviewsJSON();
 }
 
-function renderPreviewsJSON() {
+// REPLACED: renderPreviewsJSON -> async, reads file content and shows pretty-printed, scrollable preview
+async function renderPreviewsJSON() {
+  if (!previewGridJSON) return;
   previewGridJSON.innerHTML = "";
-  selectedFilesJSON.forEach((file, idx) => {
+
+  for (let idx = 0; idx < selectedFilesJSON.length; idx++) {
+    const file = selectedFilesJSON[idx];
     const item = document.createElement("div");
     item.className = "preview-item";
+
     const meta = document.createElement("div");
     meta.className = "file-meta";
     meta.innerHTML = `<span title="${file.name}">${
@@ -382,22 +609,73 @@ function renderPreviewsJSON() {
     actions.innerHTML = `<button class="btn btn-outline" onclick="removeFileJSON(${idx})"><i class="fas fa-trash"></i> Hapus</button>`;
 
     item.appendChild(meta);
+
+    // read file content and attempt pretty print
+    try {
+      const txt = await file.text();
+      let pretty = txt;
+      try {
+        const parsed = JSON.parse(txt);
+        pretty = JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        // not valid JSON -> show raw text as-is
+      }
+
+      // create a scrollable <pre> for pretty output
+      const pre = document.createElement("pre");
+      pre.className = "json-preview";
+      pre.textContent = pretty;
+      // inline styles to ensure scrollable and readable even without external CSS
+      pre.style.maxHeight = "240px";
+      pre.style.overflow = "auto";
+      pre.style.background = "#f7f7f7";
+      pre.style.padding = "8px";
+      pre.style.borderRadius = "4px";
+      pre.style.border = "1px solid #e6e6e6";
+      pre.style.fontFamily =
+        "Menlo, Monaco, Consolas, 'Liberation Mono', monospace";
+      pre.style.fontSize = "12px";
+      pre.style.whiteSpace = "pre-wrap"; // wrap long lines but preserve indentation
+      pre.style.marginTop = "8px";
+
+      item.appendChild(pre);
+    } catch (err) {
+      console.error("Gagal membaca file untuk preview", file.name, err);
+      const errNote = document.createElement("div");
+      errNote.className = "muted";
+      errNote.textContent = "Preview gagal dibuat.";
+      item.appendChild(errNote);
+    }
+
     item.appendChild(actions);
     previewGridJSON.appendChild(item);
-  });
+  }
 
-  statusAreaJSON.textContent = `${selectedFilesJSON.length} file JSON siap diproses.`;
+  if (statusAreaJSON) {
+    resetStatus(
+      statusAreaJSON,
+      `${selectedFilesJSON.length} file JSON siap diproses.`
+    );
+  }
+
+  // update clear button visibility after rendering
+  updateClearButtonsVisibility();
 }
 
 function removeFileJSON(index) {
   selectedFilesJSON.splice(index, 1);
   renderPreviewsJSON();
+  // update clear button visibility
+  updateClearButtonsVisibility();
 }
 
 function clearAllJSON() {
   selectedFilesJSON = [];
   previewGridJSON.innerHTML = "";
-  statusAreaJSON.textContent = "Belum ada file JSON dipilih.";
+  resetStatus(statusAreaJSON, "Belum ada file JSON dipilih.");
+
+  // update clear button visibility
+  updateClearButtonsVisibility();
 }
 
 async function readFileAsText(file) {
@@ -414,7 +692,7 @@ async function buildPayloadFromJSONFiles() {
     alert("Pilih minimal satu file JSON.");
     throw new Error("No json");
   }
-  statusAreaJSON.textContent = "Membaca file JSON...";
+  resetStatus(statusAreaJSON, "Membaca file JSON...");
   const filesPayload = [];
   for (let i = 0; i < selectedFilesJSON.length; i++) {
     const f = selectedFilesJSON[i];
@@ -427,9 +705,10 @@ async function buildPayloadFromJSONFiles() {
         parsed = txt;
       }
       filesPayload.push({ name: f.name, size: f.size, content: parsed });
-      statusAreaJSON.textContent = `Mempersiapkan file ${i + 1} / ${
-        selectedFilesJSON.length
-      } ...`;
+      resetStatus(
+        statusAreaJSON,
+        `Mempersiapkan file ${i + 1} / ${selectedFilesJSON.length} ...`
+      );
     } catch (err) {
       console.error("Error membaca JSON", f.name, err);
       alert("Gagal membaca file: " + f.name);
@@ -443,7 +722,7 @@ async function buildPayloadFromJSONFiles() {
     },
     files: filesPayload,
   };
-  statusAreaJSON.textContent = "Payload JSON siap.";
+  setStatusReady(statusAreaJSON, "Payload JSON siap.");
   return payload;
 }
 
@@ -523,4 +802,24 @@ async function saveFileToUploads(file, filename) {
   await writable.write(file);
   await writable.close();
   return safeName;
+}
+
+// NEW: clear buttons refs
+let clearAllVideoBtn;
+let clearAllJSONBtn;
+
+// NEW: show/hide clear buttons based on whether there are selected files
+function updateClearButtonsVisibility() {
+  try {
+    if (clearAllVideoBtn) {
+      clearAllVideoBtn.style.display =
+        selectedFilesVideo && selectedFilesVideo.length ? "" : "none";
+    }
+    if (clearAllJSONBtn) {
+      clearAllJSONBtn.style.display =
+        selectedFilesJSON && selectedFilesJSON.length ? "" : "none";
+    }
+  } catch (e) {
+    // silent
+  }
 }

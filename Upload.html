@@ -67,13 +67,15 @@
               class="small-input"
               type="text"
               placeholder="Masukkan nama peserta"
+              autocomplete="off"
             />
           </div>
 
           <div
             class="upload-area"
             id="uploadAreaVideo"
-            onclick="document.getElementById('fileInputVideo').click()"
+            role="button"
+            tabindex="0"
           >
             <p class="muted">
               Klik atau seret file video ke sini (mp4, mov, webm). Bisa unggah 1
@@ -85,17 +87,32 @@
               accept="video/*"
               multiple
               style="display: none"
+              tabindex="-1"
             />
           </div>
 
           <div class="upload-controls">
-            <button class="btn btn-primary" onclick="buildAndSendVideo()">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="buildAndSendVideo(); return false;"
+            >
               <i class="fas fa-paper-plane"></i> Kirim Video
             </button>
-            <button class="btn btn-secondary" onclick="downloadPayloadVideo()">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="downloadPayloadVideo(); return false;"
+            >
               <i class="fas fa-download"></i> Download JSON
             </button>
-            <button class="btn btn-outline" onclick="clearAllVideo()">
+            <button
+              type="button"
+              id="clearAllVideoBtn"
+              class="btn btn-outline"
+              onclick="clearAllVideo(); return false;"
+              style="display: none"
+            >
               <i class="fas fa-trash"></i> Hapus Semua
             </button>
           </div>
@@ -122,24 +139,36 @@
           <div
             class="upload-area"
             id="uploadAreaJSON"
-            onclick="document.getElementById('fileInputJSON').click()"
+            role="button"
+            tabindex="0"
           >
             <p class="muted">
-              Klik atau seret satu file .json ke sini. Maksimal 1 file.
+              Klik atau seret file .json ke sini. Maksimal 1 file.
             </p>
             <input
               id="fileInputJSON"
               type="file"
               accept=".json,application/json"
               style="display: none"
+              tabindex="-1"
             />
           </div>
 
           <div class="upload-controls">
-            <button class="btn btn-primary" onclick="buildAndSendJSONFiles()">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="buildAndSendJSONFiles(); return false;"
+            >
               <i class="fas fa-paper-plane"></i> Kirim JSON
             </button>
-            <button class="btn btn-outline" onclick="clearAllJSON()">
+            <button
+              type="button"
+              id="clearAllJSONBtn"
+              class="btn btn-outline"
+              onclick="clearAllJSON(); return false;"
+              style="display: none"
+            >
               <i class="fas fa-trash"></i> Hapus Semua
             </button>
           </div>
