@@ -34,6 +34,12 @@ function showLoading(message = "Processing, please wait...") {
   const m = document.getElementById("loadingMessage");
   if (m) m.textContent = message;
   if (o) o.style.display = "flex";
+
+  // Ensure cat gif is loaded (in case it's dynamically changed)
+  const img = o?.querySelector("img");
+  if (img && !img.src.includes("Loader-cat.gif")) {
+    img.src = "Assest/Loader-cat.gif";
+  }
 }
 
 function hideLoading() {
@@ -166,7 +172,11 @@ function clearAllVideo() {
    ============================ */
 function checkOngoingSession() {
   const savedSession = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (!savedSession) return;
+  if (!savedSession) {
+    // NO SESSION - Force hide loading
+    hideLoading();
+    return;
+  }
 
   try {
     const { sessionId, candidateName, startTime, videoCount } =
@@ -174,23 +184,107 @@ function checkOngoingSession() {
     const elapsed = Date.now() - startTime;
 
     if (elapsed > 30 * 60 * 1000) {
+      console.log("Session expired (>30 min), removing...");
       localStorage.removeItem(SESSION_STORAGE_KEY);
+      hideLoading(); // Force hide
       return;
     }
 
     console.log(`🔄 Resuming session: ${sessionId}`);
-    showLoading(
-      `Processing transcriptions...\nCandidate: ${candidateName}\nVideos: ${videoCount}\n\nPlease wait, this may take several minutes.`
-    );
+
+    // Start polling FIRST without showing loading
+    // Only show loading AFTER we confirm session exists on server
     isSubmittingVideo = true;
 
-    // Start polling after small delay to let server initialize
-    setTimeout(() => {
-      resumePolling(sessionId, candidateName);
-    }, 2000);
+    // Check session status first
+    verifyAndResumeSession(sessionId, candidateName, videoCount);
   } catch (e) {
     console.error("Failed to parse session:", e);
     localStorage.removeItem(SESSION_STORAGE_KEY);
+    hideLoading(); // Force hide
+  }
+}
+
+async function verifyAndResumeSession(sessionId, candidateName, videoCount) {
+  try {
+    // Check if session exists on server FIRST
+    const statusRes = await fetch(`http://127.0.0.1:8888/status/${sessionId}`, {
+      method: "GET",
+      cache: "no-cache",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!statusRes.ok) {
+      console.warn(
+        `Session not found on server (${statusRes.status}), clearing...`
+      );
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      hideLoading();
+      isSubmittingVideo = false;
+
+      if (statusAreaVideo) {
+        statusAreaVideo.textContent =
+          "Session tidak ditemukan di server. Silakan upload ulang.";
+        statusAreaVideo.style.color = "#f39c12";
+      }
+      return;
+    }
+
+    const statusData = await statusRes.json();
+
+    // Check if already completed
+    if (statusData.status === "completed") {
+      console.log("Session already completed, redirecting...");
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      hideLoading();
+      window.location.href = `halaman_dasboard.html?session=${sessionId}`;
+      return;
+    }
+
+    // Check if error
+    if (statusData.status === "error") {
+      console.log("Session has error, clearing...");
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      hideLoading();
+      isSubmittingVideo = false;
+
+      if (statusAreaVideo) {
+        statusAreaVideo.textContent =
+          "❌ Processing error: " + (statusData.error || "Unknown");
+        statusAreaVideo.style.color = "#e74c3c";
+      }
+
+      alert(
+        "❌ Processing sebelumnya gagal!\n\n" +
+          "Error: " +
+          (statusData.error || "Unknown") +
+          "\n\n" +
+          "Silakan upload ulang."
+      );
+      return;
+    }
+
+    // Session is valid and processing - NOW show loading
+    console.log("✅ Valid session found, starting polling...");
+    showLoading(
+      `Processing transcriptions...\nCandidate: ${candidateName}\nVideos: ${videoCount}\n\nPlease wait, this may take several minutes.`
+    );
+
+    // Start polling
+    resumePolling(sessionId, candidateName);
+  } catch (err) {
+    console.error("Failed to verify session:", err);
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    hideLoading();
+    isSubmittingVideo = false;
+
+    if (statusAreaVideo) {
+      statusAreaVideo.textContent =
+        "❌ Gagal menghubungi server: " + err.message;
+      statusAreaVideo.style.color = "#e74c3c";
+    }
   }
 }
 
@@ -210,6 +304,12 @@ async function resumePolling(sessionId, candidateName) {
 
       if (!statusRes.ok) {
         console.warn(`Status check failed: ${statusRes.status}`);
+
+        // If 404 after many attempts, session might be invalid
+        if (statusRes.status === 404) {
+          return false; // Continue polling for a while
+        }
+
         return false;
       }
 
@@ -225,15 +325,32 @@ async function resumePolling(sessionId, candidateName) {
         window.location.href = `halaman_dasboard.html?session=${sessionId}`;
         return true;
       } else if (statusData.status === "error") {
+        // ERROR DETECTED - Hide overlay and show error
         localStorage.removeItem(SESSION_STORAGE_KEY);
         hideLoading();
-        alert(
-          "Processing gagal!\n\nError: " +
-            (statusData.error || "Unknown error") +
-            "\n\nSilakan coba lagi."
-        );
         isSubmittingVideo = false;
-        return true;
+
+        const errorDetail =
+          statusData.error_detail || statusData.error || "Unknown error";
+        alert(
+          "❌ Processing gagal!\n\n" +
+            "Error: " +
+            errorDetail +
+            "\n\n" +
+            "Silakan:\n" +
+            "1. Cek log server untuk detail\n" +
+            "2. Pastikan video format valid\n" +
+            "3. Coba upload ulang dengan file berbeda"
+        );
+
+        // Update status area
+        if (statusAreaVideo) {
+          statusAreaVideo.textContent =
+            "❌ Processing error: " + (statusData.error || "Unknown");
+          statusAreaVideo.style.color = "#e74c3c";
+        }
+
+        return true; // Stop polling
       } else if (
         statusData.status === "processing" ||
         statusData.status === "uploading"
@@ -246,28 +363,51 @@ async function resumePolling(sessionId, candidateName) {
         return false;
       } else if (statusData.status === "not_found") {
         console.warn("Session not found yet, will retry...");
-        return false; // Keep trying for a while
+        return false;
       }
       return false;
     } catch (err) {
       console.error("Polling error:", err);
-      return false;
+      return false; // Continue polling despite network errors
     }
   };
 
   let attempts = 0;
+  const maxAttempts = 360; // 30 minutes max (5s interval)
+
   const poll = async () => {
-    if (++attempts > 360) {
+    if (++attempts > maxAttempts) {
+      // TIMEOUT - Hide overlay and notify user
       localStorage.removeItem(SESSION_STORAGE_KEY);
       hideLoading();
-      alert(
-        "Processing timeout!\n\nProses memakan waktu terlalu lama.\nSilakan cek hasil di dashboard atau coba lagi."
-      );
       isSubmittingVideo = false;
+
+      alert(
+        "⏱️ Processing timeout!\n\n" +
+          "Proses memakan waktu lebih dari 30 menit.\n\n" +
+          "Kemungkinan:\n" +
+          "1. Server masih memproses (cek dashboard)\n" +
+          "2. Video terlalu besar atau panjang\n" +
+          "3. Server error (cek log server)\n\n" +
+          "Silakan:\n" +
+          "- Cek dashboard untuk hasil\n" +
+          "- Atau upload ulang dengan file lebih kecil"
+      );
+      // Update status
+      if (statusAreaVideo) {
+        statusAreaVideo.textContent =
+          "⏱️ Processing timeout - cek dashboard atau upload ulang";
+        statusAreaVideo.style.color = "#f39c12";
+      }
+
       return;
     }
-    if (!(await pollStatus())) setTimeout(poll, 5000);
+
+    if (!(await pollStatus())) {
+      setTimeout(poll, 5000);
+    }
   };
+
   poll();
 }
 
@@ -294,12 +434,11 @@ async function buildAndSendVideo() {
   isSubmittingVideo = true;
   lastSubmitTime = now;
 
-  // Generate temporary session ID immediately
   const tempSessionId =
     "temp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
 
   try {
-    // PHASE 1: Upload (show loading immediately)
+    // PHASE 1: Upload - SHOW loading here
     showLoading(
       `Uploading ${selectedFilesVideo.length} video(s)...\n\nPlease wait, do not close this page.`
     );
@@ -311,11 +450,9 @@ async function buildAndSendVideo() {
 
     console.log(`📤 Uploading ${selectedFilesVideo.length} video(s)...`);
 
-    // Upload with longer timeout for large files
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
+    const timeoutId = setTimeout(() => controller.abort(), 600000);
 
-    // Use XHR instead of fetch to avoid CORS issues
     const uploadPromise = new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
@@ -335,8 +472,9 @@ async function buildAndSendVideo() {
             const result = JSON.parse(xhr.responseText);
             resolve(result);
           } catch (e) {
-            // If can't parse, assume success with temp ID
-            resolve({ success: true, session_id: tempSessionId });
+            reject(
+              new Error(`Failed to parse server response: ${xhr.responseText}`)
+            );
           }
         } else {
           reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
@@ -350,7 +488,9 @@ async function buildAndSendVideo() {
 
       xhr.addEventListener("abort", () => {
         clearTimeout(timeoutId);
-        reject(new Error("Upload timeout"));
+        reject(
+          new Error("Upload timeout - file too large or network too slow")
+        );
       });
 
       xhr.open("POST", VIDEO_ENDPOINT);
@@ -360,11 +500,16 @@ async function buildAndSendVideo() {
     const result = await uploadPromise;
     console.log("✅ Upload complete:", result);
 
-    // Get session ID (from server or use temp)
+    // Validate response
+    if (!result.success) {
+      throw new Error(result.error || "Upload failed - server returned error");
+    }
+
+    // Get session ID
     const sessionId = result.session_id || tempSessionId;
     console.log(`📊 Session ID: ${sessionId}`);
 
-    // PHASE 2: Save session and show processing message
+    // PHASE 2: Save session
     const sessionData = {
       sessionId,
       candidateName: name,
@@ -374,12 +519,12 @@ async function buildAndSendVideo() {
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
     console.log("💾 Session saved to localStorage");
 
-    // Update loading message for processing phase
+    // Update loading message
     showLoading(
       `Upload complete!\n\nProcessing transcriptions...\nCandidate: ${name}\nVideos: ${selectedFilesVideo.length}\n\nThis page will auto-reload.\nProcessing will continue in background.`
     );
 
-    // Wait a moment, then reload page to start polling
+    // Wait then reload
     await new Promise((r) => setTimeout(r, 3000));
 
     console.log("🔄 Reloading page to start background polling...");
@@ -388,34 +533,51 @@ async function buildAndSendVideo() {
     return false;
   } catch (err) {
     console.error("❌ Upload error:", err);
+
+    // ALWAYS hide loading on error
     hideLoading();
+    isSubmittingVideo = false;
 
-    // Even if upload failed, if we have temp session, save it
-    if (
-      err.message.includes("Network error") ||
-      err.message.includes("timeout")
-    ) {
-      // Save temp session anyway - server might have received it
-      const sessionData = {
-        sessionId: tempSessionId,
-        candidateName: name,
-        videoCount: selectedFilesVideo.length,
-        startTime: Date.now(),
-      };
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-
-      alert(
-        "Upload mungkin berhasil meskipun ada network error.\n\nHalaman akan di-reload untuk check status."
-      );
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } else {
-      statusAreaVideo.textContent = "Terjadi kesalahan saat mengirim.";
-      alert("Error: " + err.message);
-      isSubmittingVideo = false;
+    if (statusAreaVideo) {
+      statusAreaVideo.textContent = "❌ Upload gagal: " + err.message;
+      statusAreaVideo.style.color = "#e74c3c";
     }
+
+    let errorMessage = "Gagal mengirim video ke server.\n\n";
+
+    if (err.message.includes("Network error")) {
+      errorMessage += "Penyebab: Koneksi jaringan terputus.\n\n";
+      errorMessage += "Solusi:\n";
+      errorMessage +=
+        "1. Pastikan server FastAPI berjalan di http://127.0.0.1:8888\n";
+      errorMessage += "2. Cek koneksi internet Anda\n";
+      errorMessage += "3. Coba refresh halaman dan upload ulang";
+    } else if (err.message.includes("timeout")) {
+      errorMessage +=
+        "Penyebab: Upload memakan waktu terlalu lama (>10 menit).\n\n";
+      errorMessage += "Solusi:\n";
+      errorMessage += "1. Gunakan file video yang lebih kecil\n";
+      errorMessage += "2. Compress video terlebih dahulu\n";
+      errorMessage += "3. Upload lebih sedikit video sekaligus";
+    } else if (err.message.includes("Failed to parse")) {
+      errorMessage += "Penyebab: Server mengirim respons yang tidak valid.\n\n";
+      errorMessage += "Solusi:\n";
+      errorMessage += "1. Restart server FastAPI\n";
+      errorMessage += "2. Cek log server untuk error\n";
+      errorMessage += "3. Pastikan semua dependencies terinstall";
+    } else if (err.message.includes("Upload failed")) {
+      errorMessage += `Penyebab: ${err.message}\n\n`;
+      errorMessage += "Solusi:\n";
+      errorMessage += "1. Cek log server FastAPI untuk detail error\n";
+      errorMessage += "2. Pastikan format video didukung (.webm, .mp4)\n";
+      errorMessage += "3. Coba dengan file yang lebih kecil";
+    } else {
+      errorMessage += `Error: ${err.message}\n\n`;
+      errorMessage += "Silakan coba lagi atau hubungi administrator.";
+    }
+
+    alert(errorMessage);
+
     return false;
   }
 }
@@ -592,6 +754,9 @@ function initUploadModule() {
     });
   }
 
+  // FORCE HIDE LOADING on page load
+  hideLoading();
+
   updateClearButtonsVisibility();
 }
 
@@ -599,7 +764,14 @@ let isInitialized = false;
 function initialize() {
   if (isInitialized) return;
   isInitialized = true;
+
+  // STEP 1: Always hide loading first
+  hideLoading();
+
+  // STEP 2: Initialize UI
   initUploadModule();
+
+  // STEP 3: Check for ongoing session (will show loading only if valid session exists)
   checkOngoingSession();
 }
 

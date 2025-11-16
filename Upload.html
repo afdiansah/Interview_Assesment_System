@@ -215,15 +215,56 @@
       </div>
     </div>
 
-    <!-- Loading overlay -->
-    <div id="loadingOverlay" aria-hidden="true">
-      <div class="box">
+    <!-- Loading overlay - HIDDEN BY DEFAULT -->
+    <div
+      id="loadingOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 40px;
+          border-radius: 12px;
+          text-align: center;
+          max-width: 500px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        "
+      >
+        <!-- CHANGED: Larger cat gif - 200px from 120px -->
         <img
           src="Assest/Loader-cat.gif"
           alt="Loading..."
-          style="width: 120px; height: 120px; margin-bottom: 20px"
+          style="
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+            object-fit: contain;
+          "
         />
-        <span id="loadingMessage">Processing, please wait...</span>
+        <pre
+          id="loadingMessage"
+          style="
+            font-family: inherit;
+            white-space: pre-wrap;
+            margin: 0;
+            color: #2d3748;
+            font-size: 16px;
+            line-height: 1.6;
+          "
+        >
+Processing...</pre
+        >
       </div>
     </div>
 
