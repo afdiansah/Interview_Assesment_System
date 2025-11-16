@@ -81,7 +81,7 @@ function showLoadingIndicator() {
     `;
   loadingDiv.innerHTML = `
         <div style="text-align: center;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #667eea; margin-bottom: 20px;"></i>
+            <img src="Assest/Loader-cat.gif" alt="Loading..." style="width: 200px; height: 200px; margin-bottom: 20px; object-fit: contain;" />
             <h2 style="color: #2d3748; margin: 0;">Loading Dashboard...</h2>
             <p style="color: #718096; margin-top: 10px;">Mengambil data hasil interview</p>
         </div>
