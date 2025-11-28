@@ -3,8 +3,8 @@
 // =========================================================
 let interviewData = null;
 
-// const API_BASE_URL = "http://127.0.0.1:8888";
-const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
+const API_BASE_URL = "http://127.0.0.1:8888";
+// const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
 
 // =========================================================
 // DATA LOADING
@@ -28,9 +28,9 @@ async function loadJSONData() {
 
     // Fetch data from API
     const response = await fetch(`${API_BASE_URL}/results/${sessionId}.json`, {
-        headers: {
-            "ngrok-skip-browser-warning": "true",
-        }
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      },
     });
 
     if (!response.ok) {
@@ -381,7 +381,10 @@ function updateTranscriptDisplay() {
             </div>
             
             <div style="font-size: 14px; color: #2d3748; line-height: 1.8; padding: 12px; background: white; border-radius: 6px; text-align: justify;">
-              ${item.result.transkripsi_id || "Transkrip Indonesia tidak tersedia"}
+              ${
+                item.result.transkripsi_id ||
+                "Transkrip Indonesia tidak tersedia"
+              }
             </div>
           </div>
         </div>
@@ -404,7 +407,9 @@ function updateTranscriptDisplay() {
             </div>
             
             <div style="font-size: 14px; color: #2d3748; line-height: 1.8; padding: 12px; background: white; border-radius: 6px; text-align: justify;">
-              ${item.result.transkripsi_en || "English transcript not available"}
+              ${
+                item.result.transkripsi_en || "English transcript not available"
+              }
             </div>
           </div>
         </div>
@@ -424,7 +429,7 @@ function updateTranscriptDisplay() {
     // Append header dan content ke section
     transcriptSection.appendChild(transcriptHeader);
     transcriptSection.appendChild(transcriptContent);
-    
+
     // Append section ke container utama
     transcriptContainer.appendChild(transcriptSection);
   });

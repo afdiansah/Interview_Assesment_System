@@ -4,6 +4,7 @@
 // Video
 let fileInputVideo, previewGridVideo, statusAreaVideo, participantNameInput;
 let selectedFilesVideo = [];
+let videoQuestions = []; // NEW: Array untuk menyimpan pertanyaan setiap video
 let objectUrlsVideo = [];
 let clearAllVideoBtn;
 let isSubmittingVideo = false;
@@ -21,12 +22,12 @@ const DEFAULT_BASE_URL = "http://127.0.0.1:5500";
 const SUBMIT_DEBOUNCE_MS = 3000;
 const SESSION_STORAGE_KEY = "video_processing_session";
 
-// const VIDEO_ENDPOINT = "http://127.0.0.1:8888/upload";
-// const API_BASE_URL = "http://127.0.0.1:8888";
+const VIDEO_ENDPOINT = "http://127.0.0.1:8888/upload";
+const API_BASE_URL = "http://127.0.0.1:8888";
 
 // jika menggunakan ngrok, ganti dengan URL ngrok Anda
-const VIDEO_ENDPOINT = "https://6c047270d940.ngrok-free.app/upload";
-const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
+// const VIDEO_ENDPOINT = "https://allena-untransfigured-anomalistically.ngrok-free.dev/upload";
+// const API_BASE_URL = "https://allena-untransfigured-anomalistically.ngrok-free.dev";
 
 /* ============================
    HELPERS
@@ -151,6 +152,8 @@ function handleFilesVideo(fileList) {
   if (!files.length) return alert("Tidak ada file video terdeteksi.");
 
   selectedFilesVideo = selectedFilesVideo.concat(files);
+  // NEW: Inisialisasi pertanyaan kosong untuk video baru
+  files.forEach(() => videoQuestions.push(""));
   renderPreviewsVideo();
   updateClearButtonsVisibility();
 }
@@ -170,6 +173,30 @@ function renderPreviewsVideo() {
     const item = document.createElement("div");
     item.className = "preview-item";
 
+    // NEW: Input pertanyaan - DIPINDAHKAN KE ATAS
+    const questionWrapper = document.createElement("div");
+    questionWrapper.style.cssText = "margin-bottom: 12px;";
+
+    const questionLabel = document.createElement("label");
+    questionLabel.style.cssText =
+      "font-weight: 600; display: block; margin-bottom: 4px;";
+    questionLabel.innerHTML = 'Pertanyaan<span class="required">*</span>:';
+
+    const questionInput = document.createElement("input");
+    questionInput.type = "text";
+    questionInput.className = "small-input";
+    questionInput.placeholder = "Masukkan pertanyaan untuk video ini";
+    questionInput.value = videoQuestions[idx] || "";
+    questionInput.style.cssText =
+      "width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;";
+    questionInput.addEventListener("input", (e) => {
+      videoQuestions[idx] = e.target.value;
+    });
+
+    questionWrapper.appendChild(questionLabel);
+    questionWrapper.appendChild(questionInput);
+
+    // Video preview
     const video = document.createElement("video");
     video.className = "preview-video";
     video.controls = true;
@@ -195,9 +222,11 @@ function renderPreviewsVideo() {
     actions.style.marginTop = "8px";
     actions.innerHTML = `<button class="btn btn-outline" onclick="removeFileVideo(${idx})"><i class="fas fa-trash"></i> Hapus</button>`;
 
-    item.appendChild(wrapper);
-    item.appendChild(meta);
-    item.appendChild(actions);
+    // CHANGED: Urutan elemen - pertanyaan di atas, video di tengah
+    item.appendChild(questionWrapper); // 1. Pertanyaan di atas
+    item.appendChild(wrapper); // 2. Video di tengah
+    item.appendChild(meta); // 3. Meta info
+    item.appendChild(actions); // 4. Actions di bawah
     previewGridVideo.appendChild(item);
   });
 
@@ -216,6 +245,7 @@ function removeFileVideo(index) {
     if (objectUrlsVideo[index]) URL.revokeObjectURL(objectUrlsVideo[index]);
   } catch (e) {}
   selectedFilesVideo.splice(index, 1);
+  videoQuestions.splice(index, 1); // NEW: Hapus pertanyaan juga
   objectUrlsVideo.splice(index, 1);
   renderPreviewsVideo();
   updateClearButtonsVisibility();
@@ -228,6 +258,7 @@ function clearAllVideo() {
     } catch (e) {}
   });
   selectedFilesVideo = [];
+  videoQuestions = []; // NEW: Reset pertanyaan
   objectUrlsVideo = [];
   if (previewGridVideo) previewGridVideo.innerHTML = "";
   if (statusAreaVideo) resetStatus(statusAreaVideo, "Tidak ada file dipilih.");
@@ -276,18 +307,18 @@ function checkOngoingSession() {
 async function verifyAndResumeSession(sessionId, candidateName, videoCount) {
   try {
     // Check if session exists on server FIRST
-      const statusRes = await fetch(
-        // `http://127.0.0.1:8888/status/${sessionId}`,
-        `${API_BASE_URL}/status/${sessionId}`,
-        {
-          method: "GET",
-          cache: "no-cache",
-          headers: {
-            Accept: "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }
-      );
+    const statusRes = await fetch(
+      // `http://127.0.0.1:8888/status/${sessionId}`,
+      `${API_BASE_URL}/status/${sessionId}`,
+      {
+        method: "GET",
+        cache: "no-cache",
+        headers: {
+          Accept: "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      }
+    );
 
     if (!statusRes.ok) {
       console.warn(
@@ -506,6 +537,22 @@ async function buildAndSendVideo() {
   const name = participantNameInput.value.trim();
   if (!name) return alert("Nama Peserta wajib diisi.");
 
+  // NEW: Validasi pertanyaan
+  const emptyQuestions = [];
+  videoQuestions.forEach((q, idx) => {
+    if (!q.trim()) {
+      emptyQuestions.push(idx + 1);
+    }
+  });
+
+  if (emptyQuestions.length > 0) {
+    return alert(
+      `Pertanyaan wajib diisi untuk semua video!\n\nVideo tanpa pertanyaan: ${emptyQuestions.join(
+        ", "
+      )}`
+    );
+  }
+
   isSubmittingVideo = true;
   lastSubmitTime = now;
 
@@ -521,9 +568,16 @@ async function buildAndSendVideo() {
 
     const formData = new FormData();
     formData.append("candidate_name", name);
-    selectedFilesVideo.forEach((file) => formData.append("videos", file));
 
-    console.log(`📤 Uploading ${selectedFilesVideo.length} video(s)...`);
+    // NEW: Tambahkan pertanyaan untuk setiap video
+    selectedFilesVideo.forEach((file, idx) => {
+      formData.append("videos", file);
+      formData.append("questions", videoQuestions[idx].trim());
+    });
+
+    console.log(
+      `📤 Uploading ${selectedFilesVideo.length} video(s) with questions...`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 600000);
