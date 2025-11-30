@@ -3,8 +3,8 @@
 // =========================================================
 let interviewData = null;
 
-const API_BASE_URL = "http://127.0.0.1:8888";
-// const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
+// const API_BASE_URL = "http://127.0.0.1:8888";
+const API_BASE_URL = "https://redemptory-lavern-fiendishly.ngrok-free.dev";
 
 // =========================================================
 // DATA LOADING
@@ -212,21 +212,67 @@ function loadDashboardData() {
 // =========================================================
 function updateCheatingDisplay() {
   const cheatingElement = document.getElementById("cheating-detect");
-  if (!cheatingElement || !interviewData?.content) return;
+  if (!cheatingElement || !interviewData?.aggregate_cheating_analysis) return;
 
-  const result = interviewData.content[0].result;
+  // ✅ Ambil dari aggregate analysis (bukan per-video)
+  const agg = interviewData.aggregate_cheating_analysis;
 
-  if (result.cheating_detection.toLowerCase() === "ya") {
+  // Tentukan warna berdasarkan risk level
+  let statusColor = "#28a745"; // Green (LOW RISK)
+  let bgColor = "#d4edda";
+  
+  if (agg.risk_level === "HIGH RISK") {
+    statusColor = "#dc3545"; // Red
+    bgColor = "#f8d7da";
+  } else if (agg.risk_level === "MEDIUM RISK") {
+    statusColor = "#ffc107"; // Yellow
+    bgColor = "#fff3cd";
+  }
+
+  // Build HTML berdasarkan status
+  if (agg.overall_cheating_status.toLowerCase() === "ya") {
     cheatingElement.innerHTML = `
-            <div class="content-text">
-                YA
-                <p style="font-size: 12px; margin-top: 5px; color: #e74c3c;">
-                    Alasan: ${result.alasan_cheating || "Tidak ada alasan"}
-                </p>
-            </div>
-        `;
+      <div class="content-text" style="background: ${bgColor}; padding: 15px; border-radius: 8px;">
+        <div style="font-size: 18px; font-weight: bold; color: ${statusColor}; margin-bottom: 8px;">
+          YA
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Risk Level:</strong> ${agg.risk_level}
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Confidence:</strong> ${agg.confidence_level}
+        </div>
+        <div style="font-size: 12px; color: ${statusColor}; margin-top: 8px; padding: 8px; background: white; border-radius: 4px;">
+          <strong>📊 Summary:</strong><br/>
+          ${agg.summary}
+        </div>
+        <div style="font-size: 12px; color: #555; margin-top: 8px;">
+          <strong>⚠️ Recommendation:</strong> ${agg.recommendation}
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+          Videos Flagged: ${agg.videos_flagged}/${agg.total_videos} (${agg.flagged_percentage}%) | 
+          Avg Score: ${agg.overall_cheating_score}/100
+        </div>
+      </div>
+    `;
   } else {
-    cheatingElement.innerHTML = '<div class="content-text">TIDAK</div>';
+    cheatingElement.innerHTML = `
+      <div class="content-text" style="background: ${bgColor}; padding: 15px; border-radius: 8px;">
+        <div style="font-size: 18px; font-weight: bold; color: ${statusColor}; margin-bottom: 8px;">
+          TIDAK
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Risk Level:</strong> ${agg.risk_level}
+        </div>
+        <div style="font-size: 12px; color: #555; margin-top: 8px;">
+          ${agg.summary}
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+          Videos Analyzed: ${agg.total_videos} | 
+          Avg Score: ${agg.overall_cheating_score}/100
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -235,11 +281,30 @@ function updateNonVerbalDisplay() {
   if (!nonVerbalElement) return;
 
   const lastIndex = interviewData.content.length - 1;
-  const analisisText =
-    interviewData.content[lastIndex].result.analisis_non_verbal;
+  const interpretation = interviewData.content[lastIndex].result.non_verbal_analysis.interpretation;
 
-  nonVerbalElement.textContent = analisisText;
+  // Bangun HTML rapi
+  let output = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h3 style="color: #2c3e50;">🗣️ Speech Analysis</h3>
+      <p>${interpretation.speech_analysis}</p>
+
+      <hr style="margin: 1em 0; border: none; border-top: 1px solid #ccc;" />
+
+      <h3 style="color: #2c3e50;">😊 Facial Expression Analysis</h3>
+      <p>${interpretation.facial_expression_analysis}</p>
+
+      <hr style="margin: 1em 0; border: none; border-top: 1px solid #ccc;" />
+
+      <h3 style="color: #2c3e50;">👁️ Eye Movement Analysis</h3>
+      <p>${interpretation.eye_movement_analysis}</p>
+    </div>
+  `;
+
+  // Tampilkan ke elemen HTML
+  nonVerbalElement.innerHTML = output.trim();
 }
+
 
 function updateFinalDecision() {
   const decisionElement = document.getElementById("final-decision");
@@ -303,29 +368,30 @@ function updateSummaryCards() {
     { label: "Tempo Bicara", score: aggregate.avgTempo },
   ];
 
-  // Update rata-rata skor total
+  // Update skor rata-rata total
   document.getElementById("averageScore").textContent = aggregate.avgTotal;
 
-  // Update aspek tertinggi
-  const maxScore = Math.max(...aspects.map((a) => a.score));
-  const maxAspect = aspects.find((a) => a.score === maxScore);
+  // Aspek tertinggi
+  const maxScore = Math.max(...aspects.map(a => a.score));
+  const maxAspect = aspects.find(a => a.score === maxScore);
   document.getElementById("highestAspect").textContent = maxAspect.label;
   document.getElementById("highestScore").textContent = maxScore;
 
-  // Update aspek terendah
-  const minScore = Math.min(...aspects.map((a) => a.score));
-  const minAspect = aspects.find((a) => a.score === minScore);
+  // Aspek terendah
+  const minScore = Math.min(...aspects.map(a => a.score));
+  const minAspect = aspects.find(a => a.score === minScore);
   document.getElementById("lowestAspect").textContent = minAspect.label;
   document.getElementById("lowestScore").textContent = minScore;
 
-  // Update konsistensi (Standard Deviation)
-  const scores = aspects.map((a) => a.score);
-  const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const variance =
-    scores.reduce((sum, score) => sum + Math.pow(score - average, 2), 0) /
-    scores.length;
-  const stdDev = Math.round(Math.sqrt(variance));
-  document.getElementById("consistencyScore").textContent = `±${stdDev}`;
+  // Ambil index terakhir
+  const lastIndex = interviewData.content.length - 1;
+
+  // 🔥 Ambil analisis LLM sesuai JSON kamu
+  const analysisLLM =
+    interviewData.content[lastIndex].result.penilaian.analisis_llm;
+
+  // Tampilkan ke HTML
+  document.getElementById("analisisllm").textContent = analysisLLM;
 }
 
 function updateTranscriptDisplay() {
