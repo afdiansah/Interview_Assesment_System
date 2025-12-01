@@ -3,8 +3,8 @@
 // =========================================================
 let interviewData = null;
 
-// const API_BASE_URL = "http://127.0.0.1:8888";
-const API_BASE_URL = "https://56e7844ff969.ngrok-free.app";
+const API_BASE_URL = "http://127.0.0.1:8888";
+// const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
 
 // =========================================================
 // DATA LOADING
@@ -212,21 +212,67 @@ function loadDashboardData() {
 // =========================================================
 function updateCheatingDisplay() {
   const cheatingElement = document.getElementById("cheating-detect");
-  if (!cheatingElement || !interviewData?.content) return;
+  if (!cheatingElement || !interviewData?.aggregate_cheating_analysis) return;
 
-  const result = interviewData.content[0].result;
+  // ✅ Ambil dari aggregate analysis (bukan per-video)
+  const agg = interviewData.aggregate_cheating_analysis;
 
-  if (result.cheating_detection.toLowerCase() === "ya") {
+  // Tentukan warna berdasarkan risk level
+  let statusColor = "#28a745"; // Green (LOW RISK)
+  let bgColor = "#d4edda";
+  
+  if (agg.risk_level === "HIGH RISK") {
+    statusColor = "#dc3545"; // Red
+    bgColor = "#f8d7da";
+  } else if (agg.risk_level === "MEDIUM RISK") {
+    statusColor = "#ffc107"; // Yellow
+    bgColor = "#fff3cd";
+  }
+
+  // Build HTML berdasarkan status
+  if (agg.overall_cheating_status.toLowerCase() === "ya") {
     cheatingElement.innerHTML = `
-            <div class="content-text">
-                YA
-                <p style="font-size: 12px; margin-top: 5px; color: #e74c3c;">
-                    Alasan: ${result.alasan_cheating || "Tidak ada alasan"}
-                </p>
-            </div>
-        `;
+      <div class="content-text" style="background: ${bgColor}; padding: 15px; border-radius: 8px;">
+        <div style="font-size: 18px; font-weight: bold; color: ${statusColor}; margin-bottom: 8px;">
+          YA
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Risk Level:</strong> ${agg.risk_level}
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Confidence:</strong> ${agg.confidence_level}
+        </div>
+        <div style="font-size: 12px; color: ${statusColor}; margin-top: 8px; padding: 8px; background: white; border-radius: 4px;">
+          <strong>📊 Summary:</strong><br/>
+          ${agg.summary}
+        </div>
+        <div style="font-size: 12px; color: #555; margin-top: 8px;">
+          <strong>⚠️ Recommendation:</strong> ${agg.recommendation}
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+          Videos Flagged: ${agg.videos_flagged}/${agg.total_videos} (${agg.flagged_percentage}%) | 
+          Avg Score: ${agg.overall_cheating_score}/100
+        </div>
+      </div>
+    `;
   } else {
-    cheatingElement.innerHTML = '<div class="content-text">TIDAK</div>';
+    cheatingElement.innerHTML = `
+      <div class="content-text" style="background: ${bgColor}; padding: 15px; border-radius: 8px;">
+        <div style="font-size: 18px; font-weight: bold; color: ${statusColor}; margin-bottom: 8px;">
+          TIDAK
+        </div>
+        <div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+          <strong>Risk Level:</strong> ${agg.risk_level}
+        </div>
+        <div style="font-size: 12px; color: #555; margin-top: 8px;">
+          ${agg.summary}
+        </div>
+        <div style="font-size: 11px; color: #888; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+          Videos Analyzed: ${agg.total_videos} | 
+          Avg Score: ${agg.overall_cheating_score}/100
+        </div>
+      </div>
+    `;
   }
 }
 
