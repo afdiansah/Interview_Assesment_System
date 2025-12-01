@@ -26,8 +26,8 @@ const SESSION_STORAGE_KEY = "video_processing_session";
 // const API_BASE_URL = "http://127.0.0.1:8888";
 
 // jika menggunakan ngrok, ganti dengan URL ngrok Anda
-const VIDEO_ENDPOINT = "https://56e7844ff969.ngrok-free.app/upload";
-const API_BASE_URL = "https://56e7844ff969.ngrok-free.app";
+const VIDEO_ENDPOINT = "https://c8a1cf66a84d.ngrok-free.app/upload";
+const API_BASE_URL = "https://c8a1cf66a84d.ngrok-free.app";
 
 /* ============================
    HELPERS

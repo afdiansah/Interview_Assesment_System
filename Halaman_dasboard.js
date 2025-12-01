@@ -3,8 +3,8 @@
 // =========================================================
 let interviewData = null;
 
-const API_BASE_URL = "http://127.0.0.1:8888";
-// const API_BASE_URL = "https://6c047270d940.ngrok-free.app";
+// const API_BASE_URL = "http://127.0.0.1:8888";
+const API_BASE_URL = "https://c8a1cf66a84d.ngrok-free.app";
 
 // =========================================================
 // DATA LOADING
@@ -280,30 +280,21 @@ function updateNonVerbalDisplay() {
   const nonVerbalElement = document.getElementById("nonverbal-analysis");
   if (!nonVerbalElement) return;
 
-  const lastIndex = interviewData.content.length - 1;
-  const interpretation = interviewData.content[lastIndex].result.non_verbal_analysis.interpretation;
+  // Ambil summary dari aggregate non-verbal batch
+  const summary =
+    interviewData.aggregate_non_verbal_analysis?.aggregated_non_verbal?.summary ||
+    "Tidak ada ringkasan non-verbal.";
 
-  // Bangun HTML rapi
   let output = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-      <h3 style="color: #2c3e50;">🗣️ Speech Analysis</h3>
-      <p>${interpretation.speech_analysis}</p>
-
-      <hr style="margin: 1em 0; border: none; border-top: 1px solid #ccc;" />
-
-      <h3 style="color: #2c3e50;">😊 Facial Expression Analysis</h3>
-      <p>${interpretation.facial_expression_analysis}</p>
-
-      <hr style="margin: 1em 0; border: none; border-top: 1px solid #ccc;" />
-
-      <h3 style="color: #2c3e50;">👁️ Eye Movement Analysis</h3>
-      <p>${interpretation.eye_movement_analysis}</p>
+      <h3 style="color: #2c3e50;"> Ringkasan Analisis Non-Verbal </h3>
+      <p>${summary}</p>
     </div>
   `;
 
-  // Tampilkan ke elemen HTML
   nonVerbalElement.innerHTML = output.trim();
 }
+
 
 
 function updateFinalDecision() {
