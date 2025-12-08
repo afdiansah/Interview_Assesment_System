@@ -1,0 +1,58 @@
+Candidate: Dafffa
+Position ID: 1
+Question: Can you share any specific challenges you faced while working on certification and how you overcame them?
+Video URL: http://127.0.0.1:8888/uploads/20251128010818_b2dc1ce11fff434c8ce2b88e5efd53f9.webm
+Transcribed at: 2025-11-28T01:10:19.703703+00:00
+Model: faster-whisper large-v3
+Processing time: 115.8s
+
+==================================================
+ENGLISH TRANSCRIPTION:
+==================================================
+
+Can you share any specific challenges you faced while working on certification and how do you overcome them? Okay, actually for the challenges, there are some challenges when I took the certifications especially for the project submission that I already working with it. The first one is actually to meet the specific accuracy or fallition loss for the evaluation matrix and yeah, actually that's just need to take some trial and error with different architecture for example like we can try to add more layer, more neurons changes the neurons or even i also apply the dropout layer so yeah it really helps with the validation loss to become more lower right and yeah i think that's one of the biggest challenges that I have while working on these certifications
+
+==================================================
+INDONESIAN TRANSLATION (DeepL):
+==================================================
+
+Dapatkah Anda menceritakan tantangan spesifik yang Anda hadapi saat mengerjakan sertifikasi dan bagaimana Anda mengatasinya? Oke, sebenarnya untuk tantangannya, ada beberapa tantangan ketika saya mengambil sertifikasi terutama untuk pengajuan proyek yang sudah saya kerjakan. Yang pertama sebenarnya adalah untuk memenuhi akurasi spesifik atau fallition loss untuk matriks evaluasi dan ya, sebenarnya itu hanya perlu melakukan beberapa trial and error dengan arsitektur yang berbeda misalnya seperti kita dapat mencoba menambahkan lebih banyak lapisan, lebih banyak neuron mengubah neuron atau bahkan saya juga menerapkan lapisan putus sekolah jadi ya itu sangat membantu dengan kehilangan validasi menjadi lebih rendah dan ya saya pikir itu adalah salah satu tantangan terbesar yang saya miliki saat mengerjakan sertifikasi ini.
+
+==================================================
+AI ASSESSMENT:
+==================================================
+
+{
+  "scores": {
+    "kualitas_jawaban": 40,
+    "koherensi": 30,
+    "relevansi": 20,
+    "analysis": "The candidate's answer lacks clarity and completeness. They repeat the question and struggle to articulate their thoughts. The answer is also shallow, lacking depth of knowledge. The coherence is poor due to a lack of logical flow and inconsistency in the explanation. The relevancy is low because the candidate fails to directly address the question and gets sidetracked by specific details.",
+    "tempo_bicara": 85,
+    "confidence_score": 82
+  },
+  "total": 51,
+  "penilaian_akhir": 1,
+  "cheating_detected": "Tidak",
+  "cheating_reason": "Tidak ada indikasi kecurangan",
+  "analysis": "The candidate's answer lacks clarity and completeness. They repeat the question and struggle to articulate their thoughts. The answer is also shallow, lacking depth of knowledge. The coherence is poor due to a lack of logical flow and inconsistency in the explanation. The relevancy is low because the candidate fails to directly address the question and gets sidetracked by specific details.",
+  "keputusan_akhir": "Tidak Lulus",
+  "scoring_method": {
+    "llm_evaluated": [
+      "kualitas_jawaban",
+      "koherensi",
+      "relevansi"
+    ],
+    "static_dummy": [
+      "tempo_bicara",
+      "confidence_score"
+    ]
+  }
+}
+
+==================================================
+SCORING METHOD:
+==================================================
+
+LLM Evaluated: kualitas_jawaban, koherensi, relevansi
+Static Dummy: tempo_bicara, confidence_score
