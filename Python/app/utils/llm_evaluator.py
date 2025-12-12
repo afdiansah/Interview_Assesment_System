@@ -21,7 +21,6 @@ client = InferenceClient(api_key=HF_TOKEN)
 
 print('✅ Inference API initialized successfully\n')
 
-
 def evaluate_with_llm(transcription_text: str, question: str, position_id: int):
     """
     Evaluate interview answer using deterministic LLM evaluation with confidence scoring.
@@ -263,39 +262,42 @@ def evaluate_with_llm(transcription_text: str, question: str, position_id: int):
             "logprobs_probability": None,
             "logprobs_available": False,
         }
-
+        
 def summarize_llm_analysis_batch(assessment_results):
-    """Generate overall summary from all assessments using LLM with logprobs support"""
+    """
+    Generate overall summary from all assessments
+
+    ✅ OPTIMIZED: If only 1 video, reuse existing analysis_llm instead of calling LLM again
+    """
     try:
         if not assessment_results:
             return {
                 "kesimpulan_llm": "Tidak ada hasil penilaian yang tersedia.",
                 "rata_rata_confidence_score": 0,
                 "avg_total_llm": 0,
-                "avg_logprobs_confidence": 0,
+                "avg_logprobs_confidence": None,
                 "final_score_llm": 0
             }
 
         # Calculate averages
         confidence_scores = []
         total_scores = []
-        logprobs_confidences = []  # 🆕 NEW
+        logprobs_confidences = []
 
         for result in assessment_results:
             assessment = result.get('result', {}).get('penilaian', {})
             confidence_scores.append(assessment.get('confidence_score', 0))
             total_scores.append(assessment.get('total', 0))
-            
-            # 🆕 Extract logprobs confidence if available
-            if 'logprobs_confidence' in result.get('result', {}).get('penilaian', {}):
-                lp_conf = result['result']['penilaian'].get('logprobs_confidence')
-                if lp_conf is not None:
-                    logprobs_confidences.append(lp_conf)
+
+            # Extract logprobs confidence if available
+            lp_conf = assessment.get('logprobs_confidence')
+            if lp_conf is not None:
+                logprobs_confidences.append(lp_conf)
 
         avg_confidence = round(sum(confidence_scores) / len(confidence_scores)) if confidence_scores else 0
         avg_total = round(sum(total_scores) / len(total_scores)) if total_scores else 0
-        
-        # 🆕 Calculate average logprobs confidence
+
+        # Calculate average logprobs confidence
         avg_logprobs_confidence = None
         if logprobs_confidences:
             avg_logprobs_confidence = round(sum(logprobs_confidences) / len(logprobs_confidences), 2)
@@ -304,10 +306,61 @@ def summarize_llm_analysis_batch(assessment_results):
         projectScore = 100
         final_score = projectScore * 0.7 + avg_total * 0.3
 
-        # Prepare assessment summary
+        # ✅ NEW: If only 1 video, reuse existing analysis instead of calling LLM
+        if len(assessment_results) == 1:
+            print(f'\n{"="*70}')
+            print(f'📋 Single Video Assessment - Reusing Existing Analysis')
+            print(f'{"="*70}')
+            print(f'ℹ️  Only 1 video detected - skipping LLM summary generation')
+            print(f'✅ Using existing analysis_llm from video assessment')
+
+            # Get existing analysis from the single video
+            single_assessment = assessment_results[0].get('result', {}).get('penilaian', {})
+            existing_analysis = single_assessment.get('analisis_llm', '')
+
+            # Format as summary
+            if existing_analysis:
+                kesimpulan_llm = f"Assessment Summary: {existing_analysis}"
+            else:
+                # Fallback if no analysis
+                quality = single_assessment.get('kualitas_jawaban', 0)
+                coherence = single_assessment.get('koherensi', 0)
+                relevance = single_assessment.get('relevansi', 0)
+                total = single_assessment.get('total', 0)
+
+                kesimpulan_llm = (
+                    f"Candidate demonstrated performance with total score of {total}/100. "
+                    f"Quality: {quality}/100, Coherence: {coherence}/100, Relevance: {relevance}/100."
+                )
+
+            print(f'   📊 Score: {avg_total}/100')
+            print(f'   ✨ Analysis reused successfully')
+            print(f'{"="*70}\n')
+
+            return {
+                "kesimpulan_llm": kesimpulan_llm,
+                "rata_rata_confidence_score": avg_confidence,
+                "avg_total_llm": avg_total,
+                "final_score_llm": final_score,
+                "avg_logprobs_confidence": avg_logprobs_confidence,
+                "reused_single_analysis": True  # ✅ Flag untuk tracking
+            }
+
+        # ✅ Multiple videos: Generate comprehensive LLM summary
+        print(f'\n{"="*70}')
+        print(f'🤖 Generating Batch LLM Summary...')
+        print(f'{"="*70}')
+        print(f'📊 Processing {len(assessment_results)} video assessments')
+        print(f'📈 Average Score: {avg_total}/100')
+        if avg_logprobs_confidence is not None:
+            print(f'✨ Avg Logprobs Confidence: {avg_logprobs_confidence}%')
+
+        # Prepare assessment summary for multiple videos
         summary_lines = []
         for idx, result in enumerate(assessment_results, 1):
             assessment = result.get('result', {}).get('penilaian', {})
+            question = result.get('question', f'Question {idx}')
+
             summary_lines.append(
                 f"Video {idx}: Total {assessment.get('total', 0)}/100 "
                 f"(Quality: {assessment.get('kualitas_jawaban', 0)}, "
@@ -317,8 +370,11 @@ def summarize_llm_analysis_batch(assessment_results):
 
         assessment_summary = "\n".join(summary_lines)
 
+        # Detect language from first result
+        source_language = assessment_results[0].get('result', {}).get('metadata', {}).get('source_language', 'English')
+
         # Generate LLM summary prompt
-        user_message = f"""Based on the following interview assessment results, provide a comprehensive summary in {result.get('result', {}).get('metadata', {}).get('source_language', {})} (2-3 paragraphs, ~150-200 words).
+        user_message = f"""Based on the following interview assessment results, provide a comprehensive summary in {source_language} (2-3 paragraphs, ~150-200 words).
 
 **ASSESSMENT RESULTS**:
 {assessment_summary}
@@ -327,28 +383,22 @@ def summarize_llm_analysis_batch(assessment_results):
 - Average Total Score: {avg_total}/100
 
 **INSTRUCTIONS**:
-1. Summarize the candidate's overall performance across all videos
-2. Highlight strengths and areas for improvement
-3. Be objective and constructive
+1. Summarize the candidate's overall performance across all {len(assessment_results)} video interviews
+2. Highlight consistent strengths and areas for improvement
+3. Be objective, constructive, and professional
+4. Consider both technical competence and communication skills
 
 Respond with plain text summary only (no JSON, no markdown formatting)."""
 
-        print(f'\n{"="*70}')
-        print(f'🤖 Generating LLM Summary...')
-        print(f'📊 Processing {len(assessment_results)} video assessments')
-        print(f'📈 Average Score: {avg_total}/100')
-        if avg_logprobs_confidence is not None:
-            print(f'✨ Avg Logprobs Confidence: {avg_logprobs_confidence}%')
-        print(f'{"="*70}')
-        print(f'🤖 Calling LLM to generate summary...')
+        print(f'🤖 Calling LLM to generate comprehensive summary...')
 
-        # ✅ API Call with logprobs
+        # API Call with logprobs
         completion = client.chat.completions.create(
             model="meta-llama/Llama-3.1-8B-Instruct",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert interview analyst. Respond with plain text only, no JSON."
+                    "content": "You are an expert interview analyst. Provide comprehensive, objective assessments. Respond with plain text only, no JSON or markdown."
                 },
                 {
                     "role": "user",
@@ -358,8 +408,8 @@ Respond with plain text summary only (no JSON, no markdown formatting)."""
             max_tokens=500,
             temperature=0.3,
             top_p=0.9,
-            logprobs=True,      # 🆕 ENABLE logprobs
-            top_logprobs=3      # 🆕 Get alternatives
+            logprobs=True,
+            top_logprobs=3
         )
 
         # Extract summary
@@ -367,7 +417,7 @@ Respond with plain text summary only (no JSON, no markdown formatting)."""
         kesimpulan_llm = re.sub(r'^```.*?\n', '', kesimpulan_llm)
         kesimpulan_llm = re.sub(r'\n```$', '', kesimpulan_llm)
 
-        # 🆕 Extract summary logprobs
+        # Extract summary logprobs
         summary_logprobs_confidence = None
         try:
             if hasattr(completion.choices[0], 'logprobs') and completion.choices[0].logprobs:
@@ -383,25 +433,31 @@ Respond with plain text summary only (no JSON, no markdown formatting)."""
 
         print(f'✅ LLM Summary generated successfully')
         print(f'   Length: {len(kesimpulan_llm)} characters')
-        print(f'{" ="*70}\n')
+        print(f'   Words: {len(kesimpulan_llm.split())}')
+        print(f'{"="*70}\n')
 
         return {
             "kesimpulan_llm": kesimpulan_llm,
             "rata_rata_confidence_score": avg_confidence,
             "avg_total_llm": avg_total,
             "final_score_llm": final_score,
-            # 🆕 NEW: Logprobs data
-            "avg_logprobs_confidence": avg_logprobs_confidence,  # Average across all videos
+            "avg_logprobs_confidence": avg_logprobs_confidence,
+            "summary_logprobs_confidence": summary_logprobs_confidence,  # ✅ Separate summary confidence
+            "reused_single_analysis": False  # ✅ Flag untuk tracking
         }
 
     except Exception as e:
         print(f'❌ LLM summary generation failed: {str(e)}')
         print(f'🔄 Using fallback summary...')
-        
+
+        # Fallback summary
         return {
-            "kesimpulan_llm": f"Kandidat menunjukkan performa dengan rata-rata skor {avg_total}/100. "
-                             f"(LLM summary unavailable: {str(e)})",
+            "kesimpulan_llm": f"Kandidat menunjukkan performa dengan rata-rata skor {avg_total}/100 dari {len(assessment_results)} video interview. "
+                             f"(LLM summary unavailable: {str(e)[:100]})",
             "rata_rata_confidence_score": avg_confidence,
             "avg_total_llm": avg_total,
-            "avg_logprobs_confidence": None,
+            "final_score_llm": final_score,
+            "avg_logprobs_confidence": avg_logprobs_confidence,
+            "summary_logprobs_confidence": None,
+            "reused_single_analysis": False
         }

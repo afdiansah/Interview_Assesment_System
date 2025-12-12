@@ -13,10 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 TRANSCRIPTION_DIR = BASE_DIR / "transcriptions"
 RESULTS_DIR = BASE_DIR / "results"
+AUDIO_DIR = BASE_DIR / "audio"
 FFMPEG_BIN = BASE_DIR / "bin"  # ✅ Sesuaikan dengan struktur Anda
 
 # Create directories if not exist
-for directory in [UPLOAD_DIR, TRANSCRIPTION_DIR, RESULTS_DIR]:
+for directory in [UPLOAD_DIR, TRANSCRIPTION_DIR, RESULTS_DIR,AUDIO_DIR]:
     directory.mkdir(exist_ok=True)
 
 # ============================================================

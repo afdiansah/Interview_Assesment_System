@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .routes import router
-from .config import UPLOAD_DIR, TRANSCRIPTION_DIR, RESULTS_DIR
-from .services import get_whisper_model, get_deepl_translator
+from .config import UPLOAD_DIR, TRANSCRIPTION_DIR, RESULTS_DIR, AUDIO_DIR
+from .services import get_whisper_model, get_deepl_translator, get_voice_encoder
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     
     # Initialize DeepL translator
     get_deepl_translator()
+    get_voice_encoder()
     
     print("="*60)
     print("✅ System ready to accept requests!")
@@ -73,6 +74,7 @@ def create_app():
     app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
     app.mount("/transcriptions", StaticFiles(directory=str(TRANSCRIPTION_DIR)), name="transcriptions")
     app.mount("/results", StaticFiles(directory=str(RESULTS_DIR)), name="results")
+    app.mount("/results", StaticFiles(directory=str(AUDIO_DIR)), name="audio")
 
     # ============================================================
     # Routes

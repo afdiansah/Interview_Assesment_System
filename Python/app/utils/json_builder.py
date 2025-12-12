@@ -4,13 +4,14 @@ import uuid
 import json
 import traceback
 import time
+import numpy as np
 
 from datetime import datetime, timezone
 
 # IMPORT DARI FOLDER utils/
 from .transcription import transcribe_video
 from .translation import translate_to_indonesian, translate_to_english
-from .cheating_detection import advanced_cheating_detection, calculate_aggregate_cheating_analysis
+from .cheating_detection import aggregate_cheating_results,comprehensive_cheating_detection
 from .non_verbal import analyze_interview_video_with_confidence, summarize_non_verbal_batch
 from .llm_evaluator import evaluate_with_llm, summarize_llm_analysis_batch
 
@@ -143,9 +144,10 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
 
                 # Step 3: Cheating Detection
                 log_print(f'│ 2️⃣½ CHEATING DETECTION')
+                print('\n🔍 Running Cheating Detection...')
                 try:
                     cheating_start = time.time()
-                    cheating_result = advanced_cheating_detection(local_file, transcription_en)
+                    cheating_result = comprehensive_cheating_detection(local_file)
                     cheating_time = time.time() - cheating_start
                     log_print(f'│    ✅ Cheating detection completed in {cheating_time:.1f}s')
                 except Exception as e:
@@ -232,9 +234,6 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
                         "logprobs_probability": llm_evaluation.get('logprobs_probability'),
                         "logprobs_available": llm_evaluation.get('logprobs_available', False)
                     },
-                    "cheating_detection": cheating_result.get('cheating_status', 'Tidak'),
-                    "cheating_score": cheating_result.get('cheating_score', 0),
-                    "cheating_confidence_score": cheating_result.get('confidence_score', 0),
                     "non_verbal_analysis": non_verbal_result['analysis'],
                     "non_verbal_confidence_score": non_verbal_result['confidence_score'],
                     "transkripsi_en": transcription_en,
@@ -242,6 +241,7 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
                     "transkripsi_confidence": avg_confidence,
                     "transkripsi_min_confidence": min_conf,
                     "transkripsi_max_confidence": max_conf,
+                    "cheating_detection": cheating_result,
                     "metadata": {
                         "word_count": len(words),
                         "processed_at": datetime.now(timezone.utc).isoformat(),
@@ -309,16 +309,14 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
 
         # 1. Aggregate Cheating
         try:
-            log_print(f'\n🚨 Calculating aggregate cheating analysis...')
-            aggregate_cheating = calculate_aggregate_cheating_analysis(assessment_results)
+            log_print(f'\n👀 Calculating aggregate non-verbal...')
+            aggregate_cheating = aggregate_cheating_results(assessment_results)
             log_print(f'✅ Aggregate cheating completed')
         except Exception as e:
-            log_print(f'❌ ERROR in aggregate_cheating: {str(e)}')
+            log_print(f'❌ ERROR in aggregate_non_verbal: {str(e)}')
             log_print(f'   Traceback: {traceback.format_exc()}')
-            aggregate_cheating = {
-                "overall_cheating_status": "Error",
-                "error": str(e)
-            }
+            aggregate_cheating = {"error": str(e)}
+
 
         # 2. Aggregate Non-Verbal
         try:
@@ -360,9 +358,9 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
                     "name": candidate_name,
                     "session": session_id,
                     "llm_results": hasil_llm,
-                    "content": assessment_results,
-                    "aggregate_cheating_analysis": aggregate_cheating,
+                    "aggregate_cheating_detection": aggregate_cheating,
                     "aggregate_non_verbal_analysis": aggregate_non_verbal,
+                    "content": assessment_results,
                     "metadata": {
                         "total_videos": len(uploaded_videos),
                         "successful_videos": len(assessment_results),
@@ -383,8 +381,43 @@ def process_transcriptions_sync(session_id: str, candidate_name: str, uploaded_v
                 log_print(f'✅ Results directory ensured: {RESULTS_DIR}')
 
                 # Write JSON
-                with open(results_path, 'w', encoding='utf-8') as f:
-                    json.dump(results_json, f, ensure_ascii=False, indent=2)
+                try:
+                    with open(results_path, 'w', encoding='utf-8') as f:
+                        json.dump(results_json, f, ensure_ascii=False, indent=2)
+
+                    file_size = os.path.getsize(results_path)
+                    print(f'✅ JSON saved successfully')
+                    print(f'   File: {results_filename}')
+                    print(f'   Size: {file_size:,} bytes ({file_size/1024:.1f} KB)')
+
+                except Exception as save_error:
+                    print(f'❌ ERROR saving JSON: {save_error}')
+                    print(f'   Attempting alternative save method...')
+
+                    # Fallback: Manually convert NumPy types
+                    def convert_to_native(obj):
+                        if isinstance(obj, dict):
+                            return {k: convert_to_native(v) for k, v in obj.items()}
+                        elif isinstance(obj, list):
+                            return [convert_to_native(item) for item in obj]
+                        elif isinstance(obj, (np.integer, np.int32, np.int64)):
+                            return int(obj)
+                        elif isinstance(obj, (np.floating, np.float32, np.float64)):
+                            return float(obj)
+                        elif isinstance(obj, np.ndarray):
+                            return obj.tolist()
+                        elif isinstance(obj, np.bool_):
+                            return bool(obj)
+                        return obj
+
+                    try:
+                        cleaned_json = convert_to_native(results_json)
+                        with open(results_path, 'w', encoding='utf-8') as f:
+                            json.dump(cleaned_json, f, ensure_ascii=False, indent=2)
+                        print(f'✅ JSON saved successfully (fallback method)')
+                    except Exception as fallback_error:
+                        print(f'❌ CRITICAL: Both save methods failed: {fallback_error}')
+                        raise
 
                 log_print(f'✅ JSON written to file')
 

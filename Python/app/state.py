@@ -6,21 +6,24 @@ from pathlib import Path
 
 # ✅ Import dari config
 try:
-    from .config import UPLOAD_DIR, RESULTS_DIR, TRANSCRIPTION_DIR
+    from .config import UPLOAD_DIR, RESULTS_DIR, TRANSCRIPTION_DIR, AUDIO_DIR
     # Convert Path to string untuk kompatibilitas
     UPLOAD_DIR = str(UPLOAD_DIR)
     RESULTS_DIR = str(RESULTS_DIR)
     TRANSCRIPTION_DIR = str(TRANSCRIPTION_DIR)
+    AUDIO_DIR = str(AUDIO_DIR)
 except ImportError:
     # Fallback jika config tidak ada
     UPLOAD_DIR = "uploads"
     RESULTS_DIR = "results"
     TRANSCRIPTION_DIR = "transcriptions"
+    AUDIO_DIR = "audio"
     
     # Buat direktori
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
     os.makedirs(TRANSCRIPTION_DIR, exist_ok=True)
+    os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # ================================
 # Global Configuration
@@ -59,7 +62,8 @@ __all__ = [
     'processing_status', 
     'processing_lock', 
     'UPLOAD_DIR', 
-    'RESULTS_DIR', 
+    'RESULTS_DIR',
+    'AUDIO_DIR',
     'TRANSCRIPTION_DIR',
     'executor',
     'get_local_file_path'
