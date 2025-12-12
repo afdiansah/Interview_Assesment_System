@@ -25,8 +25,8 @@ const DEFAULT_BASE_URL = "http://127.0.0.1:5500";
 const SUBMIT_DEBOUNCE_MS = 3000;
 const SESSION_STORAGE_KEY = "video_processing_session";
 
-const VIDEO_ENDPOINT = "http://127.0.0.1:8000/upload";
-const API_BASE_URL = "http://127.0.0.1:8000";
+const VIDEO_ENDPOINT = "https://zhephyr-be-interview-assesment-system.hf.space/upload";
+const API_BASE_URL = "https://zhephyr-be-interview-assesment-system.hf.space";
 
 // jika menggunakan ngrok, ganti dengan URL ngrok Anda
 // const VIDEO_ENDPOINT =
