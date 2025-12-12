@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Request, UploadFile, File, Form
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse,Response
 
 import threading as th
 
@@ -16,6 +16,31 @@ from .state import processing_status, processing_lock, UPLOAD_DIR, RESULTS_DIR
 
 router = APIRouter()
 
+@router.options('/upload')
+async def options_upload(request: Request):
+    origin = request.headers.get("origin", "*")
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
+
+@router.options('/upload_json')
+async def options_upload(request: Request):
+    origin = request.headers.get("origin", "*")
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
 
 # ======================================================
 # POST /upload
