@@ -42,12 +42,12 @@
       "dest": "/Upload.html"
     },
     {
-      "src": "/Halaman_dasboard.html",
-      "dest": "/Halaman_dasboard.html"
-    },
-    {
       "src": "/",
       "dest": "/Upload.html"
+    },
+    {
+      "src": "/Halaman_dasboard.html",
+      "dest": "/Halaman_dasboard.html"
     }
   ],
   "headers": [
