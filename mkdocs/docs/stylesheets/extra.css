@@ -1,0 +1,169 @@
+/* Custom styles for AI Interview Assessment System documentation */
+
+:root {
+    --md-primary-fg-color: #3f51b5;
+    --md-accent-fg-color: #2196f3;
+}
+
+/* Custom card grid styling */
+.grid.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.grid.cards > * {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.grid.cards > *:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Icon styling */
+.lg.middle {
+    font-size: 2rem !important;
+    vertical-align: middle;
+}
+
+/* Code block improvements */
+.highlight {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* Table improvements */
+table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* Admonition custom colors */
+.admonition.tip {
+    border-left-color: #00bfa5;
+}
+
+.admonition.warning {
+    border-left-color: #ff9800;
+}
+
+.admonition.danger {
+    border-left-color: #f44336;
+}
+
+/* Button improvements */
+.md-button {
+    border-radius: 0.5rem;
+    text-transform: none;
+    font-weight: 500;
+}
+
+.md-button--primary {
+    background-color: var(--md-primary-fg-color);
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Badge styling */
+.badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+/* Feature grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.feature-card {
+    background: var(--md-code-bg-color);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    color: var(--md-primary-fg-color);
+}
+
+/* Command line styling */
+.command-line {
+    background: #263238;
+    color: #aed581;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-family: 'Roboto Mono', monospace;
+    overflow-x: auto;
+}
+
+/* Stats table */
+.stats-table {
+    width: 100%;
+    margin: 2rem 0;
+}
+
+.stats-table th {
+    background-color: var(--md-primary-fg-color);
+    color: white;
+    padding: 0.75rem;
+}
+
+.stats-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] .feature-card {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-md-color-scheme="slate"] .grid.cards > * {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .grid.cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Custom hero section */
+.hero {
+    text-align: center;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    margin: 2rem 0;
+}
+
+.hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}

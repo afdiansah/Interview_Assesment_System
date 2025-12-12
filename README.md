@@ -6,21 +6,22 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![Whisper](https://img.shields.io/badge/Whisper-large--v3-orange.svg)](https://github.com/openai/whisper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-MkDocs-blue.svg)](https://yourusername.github.io/Interview_Assesment_System-ngrok-raifal/)
+[![Documentation](https://img.shields.io/badge/docs-MkDocs-blue.svg)](https://dapakyuu.github.io/Interview_Assesment_System-main/)
 
-> 📚 **[View Full Documentation](https://yourusername.github.io/Interview_Assesment_System-ngrok-raifal/)** | [Quick Start](MKDOCS_GUIDE.md) | [API Reference](docs/api/endpoints.md)
+> 📚 **[View Full Documentation](https://dapakyuu.github.io/Interview_Assesment_System-main/)** | [Quick Start](MKDOCS_GUIDE.md) | [API Reference](docs/api/endpoints.md)
 
 ## ✨ Key Features
 
 🎯 **Multi-Modal AI Analysis**
-- 📝 **98% Accurate Transcription** - Faster-Whisper large-v3 with weighted confidence + logprobs
+
+- 📝 **98% Accurate Transcription** - Faster-Whisper large-v3
 - 🌐 **Bilingual Support** - English ↔ Indonesian translation via DeepL
 - 🤖 **LLM Assessment** - Hugging Face Llama 3.1-8B for semantic answer evaluation
-- 🕵️ **Cheating Detection** - Visual (face/eye tracking) + Audio (speaker diarization)
+- 🕵️ **Cheating Detection** - Visual (face & eye tracking) + Audio (speaker diarization)
 - 😊 **Non-Verbal Analysis** - Facial expressions, eye contact, speech patterns
-- 📊 **Scientific Scoring** - Z-score normalization with confidence intervals
 
 🚀 **Production-Ready**
+
 - ⚡ **Fast Processing** - 3-8 min/video (CPU), 1-3 min/video (GPU)
 - 💾 **Storage Efficient** - Auto-cleanup saves 99%+ space
 - 🔄 **Background Processing** - Async with real-time status updates
@@ -32,15 +33,26 @@
 ```bash
 # 1. Clone & setup
 git clone <repo>
-cd Interview_Assesment_System-ngrok-raifal
+cd Interview_Assesment_System-main\backend\Python
 python -m venv .venv && .venv\Scripts\activate
 
+# 2. Start server via jupyter notebook
+jupyter notebook interview_assessment_system.ipynb
+# Run all cells → Server starts on http://localhost:8888
+
+# 3. Open frontend
+# http://localhost:5500/Upload.html (via Live Server)
+```
+
+**OR**
+
+```bash
 # 2. Install (one command)
 pip install -r requirements.txt  # atau run Cell 1 di notebook
 
 # 3. Start server
-jupyter notebook payload_video.ipynb
-# Run all cells → Server starts on http://localhost:8888
+python main.py
+# Server starts on http://localhost:7860
 
 # 4. Open frontend
 # http://localhost:5500/Upload.html (via Live Server)
@@ -65,29 +77,29 @@ Platform end-to-end untuk analisis interview kandidat dengan AI:
 ```
 Frontend (Upload.html)
     ↓ POST /upload (multipart/form-data)
-    OR POST /download-and-upload (Google Drive URLs + JSON)
-Backend FastAPI (payload_video.ipynb)
+    OR POST /upload_json (JSON including Google Drive URLs)
+Backend FastAPI (interview_assessment_system.ipynb)
     ↓ Background Processing
     ├─ Video Download (if Google Drive URL)
-    ├─ Whisper Transcription (large-v3, beam_size=10)
+    ├─ Whisper Transcription (large-v3)
     ├─ DeepL Translation (EN↔ID, 500k chars/month)
     ├─ LLM Assessment (Hugging Face Llama 3.1-8B)
     │  ├─ Answer quality analysis
     │  ├─ Coherence & relevance scoring
     │  └─ Logprobs confidence extraction
     ├─ Cheating Detection
-    │  ├─ Visual: MediaPipe Face Mesh (eye gaze, head pose)
+    │  ├─ Visual: MediaPipe Face Mesh (eye gaze, head pose, face presence, multiple face detection)
     │  └─ Audio: Resemblyzer (speaker diarization)
     ├─ Non-Verbal Analysis
     │  ├─ Facial: Smile intensity, eyebrow movement
     │  ├─ Eye: Blink rate, eye contact percentage
     │  └─ Speech: Tempo, pauses, speaking ratio
-    └─ Aggregate Reporting (batch summary via LLM)
+    └─ Aggregate Reporting (batch summary)
     ↓ Save to JSON
 Results API (/results/{session_id})
     ↓ GET JSON
 Dashboard (Halaman_dasboard.html)
-    ↓ Display results + Cheating report + PDF export
+    ↓ Display results + Full report + PDF export
 ```
 
 ---
@@ -110,7 +122,7 @@ pip --version
 
 ```bash
 # Navigate to project directory
-cd d:\Interview_Assesment_System-ngrok-raifal
+cd Interview_Assesment_System-main\backend\Python
 
 # Create virtual environment (Python 3.11)
 python -m venv .venv
@@ -122,26 +134,15 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies (atau jalankan cell 1 di notebook)
-# Core packages
-pip install fastapi uvicorn nest-asyncio pyngrok python-multipart
-pip install tqdm ipywidgets jupyter imageio-ffmpeg
-
-# AI/ML packages
-pip install faster-whisper deepl silero-vad huggingface-hub
-pip install mediapipe resemblyzer moviepy
-pip install pydub soundfile scipy scikit-learn librosa
-
-# Additional tools
-pip install gdown requests torchcodec
-
+pip -r requirements.txt
 # Note: numpy==1.26.4, torch, torchaudio harus sudah terinstall
 ```
 
 ### 3. DeepL API Setup (Translation EN↔ID)
 
-1. Sign up: https://www.deepl.com/pro-api
+1. Sign up: https://www.deepl.com/
 2. Get FREE API key (500,000 chars/month)
-3. Edit `payload_video.ipynb` cell yang berisi:
+3. Edit `interview_assessment_system.ipynb` cell yang berisi:
    ```python
    DEEPL_API_KEY = "YOUR_API_KEY_HERE:fx"
    ```
@@ -153,7 +154,7 @@ pip install gdown requests torchcodec
 1. Sign up: https://huggingface.co/join
 2. Generate API token: https://huggingface.co/settings/tokens
    - Select: **READ** access (sudah cukup)
-3. Edit `payload_video.ipynb` cell yang berisi:
+3. Edit `interview_assessment_system.ipynb` cell yang berisi:
    ```python
    HF_TOKEN = "hf_xxxxxxxxxxxxxxxxxxxx"
    client = InferenceClient(api_key=HF_TOKEN)
@@ -170,6 +171,7 @@ pip install gdown requests torchcodec
 **Critical untuk audio extraction dan speaker diarization**
 
 **Windows:**
+
 ```bash
 # Download: https://github.com/GyanD/codexffmpeg/releases
 # Extract ke C:\ffmpeg
@@ -180,11 +182,13 @@ ffmpeg -version
 ```
 
 **macOS:**
+
 ```bash
 brew install ffmpeg
 ```
 
 **Linux:**
+
 ```bash
 sudo apt install ffmpeg
 ```
@@ -198,7 +202,7 @@ sudo apt install ffmpeg
 pip install jupyter
 
 # Launch notebook
-jupyter notebook payload_video.ipynb
+jupyter notebook interview_assessment_system.ipynb
 
 # Execute cells in order:
 # Cell 1: Install dependencies (numpy, torch, faster-whisper, dll)
@@ -217,7 +221,7 @@ jupyter notebook payload_video.ipynb
 
 ```bash
 # Not recommended - use notebook for better control
-uvicorn payload_video:app --host 0.0.0.0 --port 8888
+uvicorn interview_assessment_system:app --host 0.0.0.0 --port 8888
 ```
 
 ### 7. Open Frontend
@@ -242,22 +246,39 @@ python -m http.server 5500
 ### Phase 1: Upload & Queue (< 10 detik)
 
 1. User buka `Upload.html`
-2. Input nama kandidat
+2. Input nama kandidat dan source bahasa
 3. Pilih/drag multiple video files
 4. Klik "Kirim Video"
-5. System upload ke `/upload` endpoint
-6. Server return `session_id` immediately
-7. Frontend save session ke localStorage
-8. Show loading overlay
+5. Input pertanyaan masing-masing video
+6. System upload ke `/upload` endpoint
+7. Server return `session_id` immediately
+8. Frontend save session ke localStorage
+9. Show loading overlay
 
 **Response Example:**
 
 ```json
 {
   "success": true,
-  "session_id": "5e4e4ebc680741b082563df759aeb22c",
-  "message": "Videos uploaded. Processing started.",
-  "uploaded_videos": 3
+  "name": "Raifal Bagus",
+  "session": "4ec407d0b416464283cee9f97d44fa0b",
+  "content": [
+    {
+      "id": 1,
+      "question": "What is the difference between HTML and CSS?",
+      "result": {
+        "penilaian": {},
+        "non_verbal_analysis": {}
+      },
+      "transkripsi_en": "This is the first time I've seen a website that has a lot of HTML and CSS I think HTML is a basic structure for a website While CSS is a decoration to design the website If it is likened to a human HTML is like a bone which is the basis of the human body While CSS is a to decorate the website Thank you",
+      "transkripsi_id": "Jelaskan apa itu perbedaan antara HTML dan CSS Baik, menurut saya HTML merupakan sebuah struktur dasar Bagi sebuah website Sedangkan CSS itu Merupakan sebuah hiasan Untuk mendesain website tersebut Jika diibaratkan manusia HTML tuh ibarat tulang Yang sebagai dasar pada tubuh manusia Sedangka CSS itu Merupakan sebuah Untuk menghias Website itu Tersebut Terima kasih",
+      "non_verbal_confidence_score": 75.08,
+      "transkripsi_confidence": 98.75,
+      "cheating_detection": {},
+      "metadata": {}
+    }
+  ],
+  "metadata": {}
 }
 ```
 
@@ -272,7 +293,7 @@ For each video:
   │    📝 Faster-Whisper large-v3
   │    📝 Beam size: 10, VAD filter
   │    ✅ Completed in 45.2s | 9 segments | 127 words
-  │    📊 Weighted confidence: 94.5%
+  │    📊 Confidence: 97.5%
   │
   │ 2️⃣  TRANSLATION (DeepL)
   │    ✅ EN→ID: 771 → 831 chars
@@ -300,12 +321,11 @@ For each video:
   │    ✅ Confidence Score: 78.4% (Good)
   │
   │ 5️⃣  SAVING FILES
-  │    💾 transcription_pos1_xxx.txt
-  │    💾 assessment_xxx.json
+  │    💾 xxx.json
   │
   │ 🗑️  Video & temp audio deleted (17.1 MB freed)
   │ ⏱️  Total: 147.8s
-  │ 📊 Assessment: Lulus (4.2/5)
+  │ 📊 Assessment: Lulus (90.7)
   └──────────────────────────────────┘
 ```
 
@@ -317,7 +337,7 @@ For each video:
    - VAD filter: Skip silence (threshold: 0.3)
    - Language: English/Indonesian (auto-detect)
    - Initial prompt: Professional interview context
-   - Weighted confidence scoring
+   - Confidence scoring
    - Output: Full text transcription + confidence metrics
 
 2. **Translation** (DeepL API)
@@ -331,62 +351,68 @@ For each video:
 3. **LLM Assessment** (Hugging Face Llama 3.1-8B)
 
    **Semantic Analysis via LLM:**
+
    - Model: meta-llama/Llama-3.1-8B-Instruct
    - Provider: Hugging Face Inference API (free tier)
    - Temperature: 0.3 (deterministic)
    - Max tokens: 500 per evaluation
 
    **Evaluation Process:**
+
    ```python
    prompt = f"""
    Analyze this interview answer:
    Question: {question}
    Answer: {transcription_text}
-   
+
    Evaluate (0-100):
    1. kualitas_jawaban (quality, depth, examples)
    2. koherensi (structure, clarity)
    3. relevansi (relevance to question)
    4. Provide brief analysis
-   
+
    Respond with JSON only.
    """
    ```
 
    **Logprobs Confidence:**
+
    - Extracts token-level log probabilities
-   - Calculates weighted confidence (exp(avg_logprob) * 100)
-   - Boosts scores based on model certainty
-   - Confidence range: 50-95%
+   - Calculates confidence using sigmoid formula
 
    **Batch Summary (Multiple Videos):**
+
    - Aggregates scores from all videos
    - Generates comprehensive 150-200 word summary
    - Highlights strengths and improvement areas
    - Reuses single analysis if only 1 video (optimization)
 
    **Fallback:**
+
    - Rule-based scoring if LLM API fails
    - Word count heuristics
    - Still provides usable assessment
 
 4. **Cheating Detection** (Multi-Modal)
 
-   **Visual Analysis (MediaPipe Face Mesh):**
+   **Visual Analysis (MediaPipe Face Mesh & Detection):**
+
    - Eye gaze tracking (iris position ratio)
    - Head pose detection (nose position ratio)
    - Multiple face detection
+   - Face presence tracking
    - Suspicious frame counting
-   - Confidence: 70-95%
+   - Confidence extraction
 
    **Audio Analysis (Resemblyzer):**
+
    - Voice embeddings extraction
    - Speaker clustering (Agglomerative)
    - Silhouette score calculation
    - Multiple speaker detection
-   - Confidence: 60-95%
 
    **Verdict Logic:**
+
    - Safe: 1 face + 1 speaker, low suspicious activity
    - Medium Risk: Suspicious activity >5%
    - High Risk: Multiple faces/speakers OR suspicious activity >20%
@@ -394,24 +420,28 @@ For each video:
 5. **Non-Verbal Analysis** (Scientific Scoring)
 
    **Speech Analysis (PyDub):**
+
    - Speaking ratio (speech vs silence)
    - Speech rate (words per minute)
    - Pause detection and counting
    - Total duration tracking
 
    **Facial Expression (MediaPipe):**
+
    - Smile intensity (mouth width)
    - Eyebrow movement range
    - Calibration-based normalization
    - Frame skipping optimization (every 5 frames)
 
    **Eye Movement (MediaPipe + Iris Tracking):**
+
    - Blink rate per minute
    - Eye contact percentage
    - Gaze stability tracking
    - Direct gaze detection
 
    **Confidence Calculation:**
+
    - Z-score normalization per metric
    - Weighted scoring (speech rate: 26%, speaking ratio: 24%, etc.)
    - Scientific reliability adjustment
@@ -420,20 +450,18 @@ For each video:
 6. **Final Assessment Generation**
 
    - Multi-metric evaluation combining:
-     * LLM scores (quality, coherence, relevance)
-     * Transcription confidence (weighted logprobs)
-     * Cheating detection verdict
-     * Non-verbal confidence score
+     - LLM scores (quality, coherence, relevance) + confidence score
+     - Transcription confidence score
+     - Cheating detection verdict
+     - Non-verbal confidence score
    - Final decision (Lulus/Tidak Lulus)
    - Aggregate batch summary (if multiple videos)
    - Comprehensive metadata
 
 7. **Save Results**
 
-   - `transcriptions/transcription_posX_xxx.txt` (EN + ID)
    - `results/{session_id}.json` (complete assessment)
    - `audio/temp_audio_xxx.wav` (temporary, auto-deleted)
-   - `session_{session_id}.log` (processing log for debugging)
 
 8. **Cleanup**
    - Delete original video files
@@ -499,6 +527,8 @@ Content-Type: multipart/form-data
 
 candidate_name: "John Doe"
 videos: [video1.webm, video2.webm, ...]
+question: ["video1", "video2", ...]
+language: "en"  // or "id"
 ```
 
 **Response:**
@@ -511,14 +541,12 @@ videos: [video1.webm, video2.webm, ...]
 }
 ```
 
-### `POST /download-and-upload`
-
-**NEW:** Download videos from Google Drive URLs and process
+### `POST /upload_json`
 
 **Request:**
 
 ```http
-POST /download-and-upload
+POST /upload_json
 Content-Type: application/json
 
 {
@@ -553,11 +581,11 @@ Content-Type: application/json
 ```
 
 **Features:**
+
 - Supports Google Drive direct links
 - Auto-extracts file ID from various Drive URL formats
 - Downloads with gdown library
 - Falls back to direct URL download
-- Identical processing pipeline as `/upload`
 
 ### `GET /status/{session_id}`
 
@@ -583,103 +611,172 @@ Get final assessment results
 ```json
 {
   "success": true,
-  "name": "John Doe",
-  "session": "abc123...",
+  "name": "Raifal Bagus",
+  "session": "4ec407d0b416464283cee9f97d44fa0b",
+  "llm_results": {
+    "kesimpulan_llm": "Pada keseluruhan, kandidat menunjukkan kinerja yang cukup baik dalam wawancara video, dengan skor rata-rata total 62 dari 100. Namun, ini menunjukkan bahwa kandidat masih perlu meningkatkan kinerjanya dalam beberapa aspek.\n\nKandidat menunjukkan kekuatan dalam hal kualitas jawaban dan relevansi informasi yang disampaikan namun, kandidat masih perlu meningkatkan kinerjanya dalam hal kohesi jawaban dan kejelasan komunikasi. Dengan demikian, kandidat perlu meningkatkan kemampuan komunikasi dan keterampilan berpikir kritis untuk meningkatkan kinerjanya.",
+    "rata_rata_confidence_score": 96,
+    "avg_total_llm": 62,
+    "final_score_llm": 88.6,
+    "avg_logprobs_confidence": 95.79,
+    "summary_logprobs_confidence": 91.14,
+    "reused_single_analysis": false
+  },
+  "aggregate_cheating_detection": {
+    "avg_cheating_score": 3.06,
+    "avg_visual_confidence": 91.59,
+    "avg_audio_confidence": 80,
+    "avg_overall_confidence": 85.79,
+    "total_suspicious_frames": 65,
+    "avg_silhouette_score": -0.597,
+    "verdict_distribution": {
+      "Safe": 1,
+      "Medium Risk": 1,
+      "High Risk": 1
+    },
+    "final_aggregate_verdict": "High Risk",
+    "risk_level": "Critical",
+    "questions_with_issues": [
+      {
+        "question_id": 1,
+        "question": "Can you tell us about the challenges you faced while working on your certification and how you overcame them?",
+        "verdict": "Medium Risk",
+        "cheating_score": 9.17,
+        "visual_confidence": 90.79,
+        "audio_confidence": 90,
+        "num_speakers": 1,
+        "indicators": ["Medium suspicious activity (9.2%)"]
+      }
+    ],
+    "all_indicators": [
+      {
+        "question_id": 1,
+        "question": "Can you tell us about the challenges you faced while working on your certification and how you overcame them?",
+        "indicator": "Medium suspicious activity (9.2%)"
+      }
+    ],
+    "summary": "Analyzed 1 question(s) for cheating detection. Average cheating score: 3.06%. Overall confidence: 85.79%. ⚠️ 1 question(s) flagged as HIGH RISK. ⚠️ 1 question(s) flagged as MEDIUM RISK. Total of 1 cheating indicator(s) detected."
+  },
+  "aggregate_non_verbal_analysis": {
+    "overall_performance_status": "GOOD",
+    "overall_confidence_score": 77.48,
+    "summary": "speaking ratio 0.57 (fairly active), pauses 13.0 (fluent), speech rate 150.0 wpm (ideal) smile intensity = 0.00 (neutral), eyebrow movement = 0.013 (controlled) eye contact = 98.73% (very good), blink rate = 37.67 (high)"
+  },
   "content": [
     {
       "id": 1,
-      "question": "Tell me about yourself",
+      "question": "Can you tell us about the challenges you faced while working on your certification and how you overcame them?",
       "result": {
         "penilaian": {
-          "confidence_score": 94.5,
-          "kualitas_jawaban": 88,
-          "relevansi": 90,
-          "koherensi": 85,
-          "tempo_bicara": 92,
-          "total": 89.9
-        },
-        "penilaian_akhir": 4.5,
-        "transkripsi_en": "I am a software engineer...",
-        "transkripsi_id": "Saya adalah seorang insinyur perangkat lunak...",
-        "cheating_detection": {
-          "visual": {
-            "cheating_score": 3.2,
-            "suspicious_frames": 45,
-            "confidence": {"average": 87.5, "min": 72.1, "max": 95.3}
-          },
-          "audio": {
-            "num_speakers": 1,
-            "confidence": 92.0,
-            "silhouette_score": 0.152
-          },
-          "final_verdict": "Safe",
-          "final_avg_confidence": 89.75,
-          "all_indicators": []
+          "confidence_score": 95.13,
+          "kualitas_jawaban": 72,
+          "relevansi": 78,
+          "koherensi": 68,
+          "analisis_llm": "The candidate's answer shows some potential, but lacks depth and clarity. They seem to misunderstand the question and provide a generic response. The answer is partially relevant to the topic, but could be improved with more specific examples and a clearer structure.",
+          "total": 73,
+          "logprobs_confidence": 95.13,
+          "logprobs_probability": 0.9513203036796086,
+          "logprobs_available": true
         },
         "non_verbal_analysis": {
           "speech_analysis": {
-            "speaking_ratio": 0.68,
-            "speech_rate_wpm": 145,
-            "number_of_pauses": 12
+            "total_duration_seconds": 42.8,
+            "speaking_time_seconds": 24.88,
+            "silence_time_seconds": 17.92,
+            "number_of_pauses": 17,
+            "speech_rate_wpm": 150,
+            "speaking_ratio": 0.58
           },
           "facial_expression_analysis": {
-            "average_smile_intensity": 0.18,
-            "eyebrow_movement_range": 0.025
+            "average_smile_intensity": 0.0056,
+            "smile_variation": 0.0037,
+            "eyebrow_movement_range": 0.0202,
+            "baseline_smile_intensity": 0.0825,
+            "baseline_eyebrow_position": 0.4829,
+            "total_frames_analyzed": 709,
+            "face_detected_percentage": 99.44,
+            "calibration_applied": true
           },
           "eye_movement_analysis": {
-            "blink_rate_per_minute": 17,
-            "eye_contact_percentage": 65
-          },
-          "confidence_score": 78.4,
-          "confidence_level": "Good"
+            "total_blinks": 9,
+            "blink_rate_per_minute": 22.85,
+            "eye_contact_percentage": 96.19,
+            "gaze_stability": 0.0212
+          }
         },
-        "keputusan_akhir": "Lulus"
+        "non_verbal_confidence_score": 82.7,
+        "transkripsi_en": "Can you tell me the challenges you faced when working on certification and how to overcome them One of the biggest challenges when ordering certification is the consistency of learning in the midst of a fairly busy work schedule to overcome it I made a realistic daily study schedule reading the material into small calls active learning methods such as taking notes and practicing questions In addition, I looked for communities and forums related to certification so that I could discuss when I found the material difficult with that approach I can stay focused on providing certification in a timely manner.",
+        "transkripsi_id": "Bisakah Anda ceritakan tantangan yang anda hadapi saat mengerjakan sertifikasi dan bagaimana mengatasinya salah satu Tantang terbesar ketika memerintahkan Sertifikasi adalah konsistensi belajar di tengah jadwal pekerjaan yang cukup padat untuk mengatasnya saya membuat Jadwal Belajar harianya realistis membacakan materi menjadi kecil menelepon metode belajar aktif seperti membuat catatan dan latihan soal Selain itu saya mencari komunitas dan forum terkait sertifikasi tersebut sehingga bisa berdiskusi ketika Menemukan materinya sulit dengan pendekatan Itu Saya Bisa tetap fokus dalam menyediakan Sertifikasi secara tepat waktu",
+        "transkripsi_confidence": 98.68,
+        "transkripsi_min_confidence": 98.54,
+        "transkripsi_max_confidence": 98.86,
+        "cheating_detection": {
+          "visual": {
+            "cheating_score": 9.17,
+            "suspicious_frames": 65,
+            "cheating_reasons": ["Medium suspicious activity (9.2%)"],
+            "confidence": {
+              "average": 90.79,
+              "min": 71.93,
+              "max": 97.44
+            }
+          },
+          "audio": {
+            "num_speakers": 1,
+            "confidence": 90,
+            "silhouette_score": -1
+          },
+          "final_verdict": "Medium Risk",
+          "final_avg_confidence": 90.4,
+          "all_indicators": ["Medium suspicious activity (9.2%)"]
+        },
+        "metadata": {
+          "word_count": 101,
+          "processed_at": "2025-12-12T00:55:59.548476+00:00",
+          "logprobs_enabled": true,
+          "source_language": "Indonesian"
+        }
       }
     }
   ],
-  "aggregate_cheating": {
-    "final_aggregate_verdict": "Safe",
-    "avg_cheating_score": 3.2,
-    "avg_overall_confidence": 89.75,
-    "risk_level": "Clear"
-  },
-  "aggregate_non_verbal": {
-    "overall_performance_status": "GOOD",
-    "overall_confidence_score": 78.4
-  },
   "metadata": {
+    "total_videos": 1,
+    "successful_videos": 1,
+    "processed_at": "2025-12-12T00:58:16.152031+00:00",
     "model": "faster-whisper large-v3",
-    "translation_provider": "DeepL",
-    "cheating_detector": "MediaPipe + Resemblyzer",
-    "non_verbal_analyzer": "MediaPipe + PyDub"
+    "llm_model": "meta-llama/Llama-3.1-8B-Instruct"
   }
 }
 ```
 
-### `GET /upload_form`
+### `GET /`
 
-Test form untuk quick testing
+Quick testing server
 
 ---
 
 ## 📁 File Structure
 
 ```
-Interview_Assesment_System-ngrok-raifal/
-├── Upload.html              # Frontend upload page
-├── Upload.css               # Upload page styling
-├── Upload.js                # Upload logic + polling
-├── Halaman_dasboard.html    # Dashboard page
-├── Halaman_dasboard.css     # Dashboard styling
-├── Halaman_dasboard.js      # Dashboard logic + charts
-├── Halaman_dasboard.json    # Dashboard configuration
-├── payload_video.ipynb      # Backend server (FastAPI)
-├── payload.ipynb            # Additional payload handling
-├── README.md                # This file
-├── bin/                     # Binary files
-├── Assest/                  # Static assets (images, icons)
-├── transcriptions/          # Saved .txt files (EN + ID)
-└── results/                 # Final JSON results
+Interview_Assesment_System-main/
+├── backend/
+│   ├── bin/                            # Binary files
+│   └── Python/                         # Folder python
+│       ├── app/                        # App files
+│       ├── results/                    # Final JSON results
+│       ├── Dockerfile                  # Docker
+│       ├── main.py                     # Python main
+│       └── requirements.txt            # Depedensi
+├── frontend/
+│   ├── Assest/                         # Static assets (images, icons)
+│   ├── Upload.html                     # Frontend upload page
+│   ├── Upload.css                      # Upload page styling
+│   ├── Upload.js                       # Upload logic + polling
+│   ├── Halaman_dasboard.html           # Dashboard page
+│   ├── Halaman_dasboard.css            # Dashboard styling
+│   ├── Halaman_dasboard.js             # Dashboard logic + charts
+├── interview_assessment_system.ipynb   # Jupyter Notebook
+└── README.md                           # This file
 ```
 
 ---
@@ -707,7 +804,7 @@ Current: `large-v3` (best accuracy ~98%)
 **Alternatives:**
 
 ```python
-# In payload_video.ipynb - Initialize Whisper Model cell
+# In interview_assessment_system.ipynb - Initialize Whisper Model cell
 whisper_model = WhisperModel(
     "large-v3",   # Best accuracy (slow, ~3GB)
     # "medium",   # Balanced (~1.5GB)
@@ -745,7 +842,7 @@ initial_prompt = "This is a professional interview in English."
 # Visual thresholds
 EYE_RATIO_RIGHT_LIMIT = 0.6   # Gaze direction limits
 EYE_RATIO_LEFT_LIMIT = 1.6
-HEAD_TURN_LEFT_LIMIT = 0.35   # Head pose limits  
+HEAD_TURN_LEFT_LIMIT = 0.35   # Head pose limits
 HEAD_TURN_RIGHT_LIMIT = 0.65
 SCORE_HIGH_RISK = 20.0        # % threshold for high risk
 SCORE_MEDIUM_RISK = 5.0       # % threshold for medium risk
@@ -833,11 +930,13 @@ torch.set_num_threads(4)  # Optimize CPU performance
 **Solution:**
 
 1. **Check video has audio:**
+
    ```bash
    ffmpeg -i video.webm 2>&1 | grep "Audio"
    ```
 
 2. **Manual audio extraction:**
+
    ```bash
    ffmpeg -i video.webm -vn -acodec pcm_s16le -ar 16000 -ac 1 audio.wav
    ```
@@ -872,11 +971,13 @@ MAX_FRAMES = 200  # Reduce from 300
 **Solution:**
 
 1. **Check video quality:**
+
    - Resolution: minimum 480p
    - Face visible: >50% of frames
    - Lighting: adequate illumination
 
 2. **Adjust weights:**
+
    ```python
    # Increase reliable metrics:
    WEIGHTS = {
@@ -978,18 +1079,6 @@ localStorage.removeItem("video_processing_session");
 2. Check quota (500k chars/month free)
 3. Fallback: System continue tanpa translation
 
-### ❌ Out of Memory
-
-**Problem:** Python kernel crash
-
-**Solution:**
-
-### ❌ Out of Memory
-
-**Problem:** Python kernel crash
-
-**Solution:**
-
 ```python
 # Use smaller model:
 whisper_model = WhisperModel("medium")
@@ -1005,19 +1094,19 @@ MAX_FRAMES = 150
 
 ## 📈 Performance Metrics
 
-| Metric                         | Value                      |
-| ------------------------------ | -------------------------- |
-| Transcription Accuracy         | ~98% (clear audio)         |
-| Translation Quality            | ~98% (DeepL API)           |
-| Cheating Detection Accuracy    | ~92% (visual + audio)      |
-| Speaker Diarization Confidence | 60-95% (depends on audio)  |
-| Non-Verbal Confidence          | 50-90% (depends on video)  |
-| Processing Speed (CPU)         | 3-8 min/video              |
-| Processing Speed (GPU)         | 1-3 min/video              |
-| Storage Saved                  | 99%+ (videos deleted)      |
-| API Uptime                     | 99.9% (local)              |
+| Metric                      | Value                     |
+| --------------------------- | ------------------------- |
+| Transcription Accuracy      | ~98% (clear audio)        |
+| Translation Quality         | ~98% (DeepL API)          |
+| Cheating Detection Accuracy | ~92% (visual + audio)     |
+| Non-Verbal Confidence       | 50-90% (depends on video) |
+| Processing Speed (CPU)      | 3-8 min/video             |
+| Processing Speed (GPU)      | 1-3 min/video             |
+| Storage Saved               | 99%+ (videos deleted)     |
+| API Uptime                  | 99.9% (local)             |
 
 **Breakdown per video:**
+
 - Transcription: 45-90s
 - Translation: 2-5s
 - Cheating Detection: 30-120s
@@ -1028,12 +1117,7 @@ MAX_FRAMES = 150
 
 ## 🛠️ Development
 
-### Enhance AI Assessment (Current: Rule-Based)
-
-**Current Implementation:**
-- Rule-based scoring berdasarkan transcript length, keywords
-- Fixed weights untuk setiap metrik
-- Dummy/random values untuk beberapa field
+### Enhance AI Assessment
 
 **Enhancement Options:**
 
@@ -1045,21 +1129,21 @@ def generate_ai_assessment(transcription_text, question, position):
     Analyze this interview answer for {position}:
     Question: {question}
     Answer: {transcription_text}
-    
+
     Provide scores (0-100) for:
     1. Answer quality (relevance, depth, examples)
     2. Communication clarity (coherence, structure)
     3. Technical knowledge (if applicable)
     4. Soft skills demonstrated
-    
+
     Format: JSON with scores and reasoning
     """
-    
+
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    
+
     return parse_response(response)
 
 # Option 2: Custom ML Model
@@ -1094,7 +1178,7 @@ for segment in segments:
 # Weighted average
 total_duration = sum(s["duration"] for s in segments_with_confidence)
 weighted_confidence = sum(
-    s["confidence"] * s["duration"] / total_duration 
+    s["confidence"] * s["duration"] / total_duration
     for s in segments_with_confidence
 )
 ```
@@ -1107,11 +1191,11 @@ def score_conf(metric_name, value):
     mean = STATS[metric_name]["mean"]
     sd = STATS[metric_name]["sd"]
     reliability = STATS[metric_name]["reliability"]
-    
+
     z = (value - mean) / sd
     base_conf = math.exp(-(z**2) / 2)  # Gaussian
     adjusted_conf = base_conf * reliability
-    
+
     return adjusted_conf
 
 # Confidence interval calculation
@@ -1152,6 +1236,7 @@ summarize_non_verbal_batch(assessment_results)
 ## � Technologies Used
 
 ### Backend
+
 - **FastAPI** - Modern async web framework
 - **faster-whisper** (large-v3) - Speech-to-text (CTranslate2 optimized)
 - **DeepL API** - Neural machine translation
@@ -1168,19 +1253,21 @@ summarize_non_verbal_batch(assessment_results)
 - **requests** - HTTP client for video downloads
 
 ### Frontend
+
 - **Vanilla JavaScript** - No framework overhead
 - **Chart.js** - Data visualization
 - **HTML5** - Drag & drop file upload
 - **CSS3** - Responsive design
 
 ### AI Models
+
 - **Whisper large-v3** (~3GB) - OpenAI's SOTA speech recognition
 - **Llama 3.1-8B-Instruct** - Meta's LLM for answer evaluation
-- **Silero VAD** - Voice activity detection
-- **MediaPipe Face Mesh** - 468-point facial landmarks
+- **MediaPipe** - 468-point facial landmarks
 - **Resemblyzer GE2E** - Speaker embedding network (~50MB)
 
 ### Infrastructure
+
 - **Jupyter Notebook** - Interactive development
 - **FFmpeg** - Audio/video codec handling
 - **ngrok** (optional) - Public URL tunneling
@@ -1204,17 +1291,10 @@ MIT License - Feel free to modify and use for commercial/personal projects.
 
 ---
 
-## 📞 Support
-
-- Issues: GitHub Issues
-- Docs: This README
-- Email: [Isi Email Masing2] xxxxxxx@gmail.com
-
----
-
 ## 🎯 Roadmap
 
 **Completed:**
+
 - [x] Video upload + transcription (faster-whisper large-v3)
 - [x] DeepL translation (EN↔ID)
 - [x] Dashboard with charts
@@ -1224,23 +1304,12 @@ MIT License - Feel free to modify and use for commercial/personal projects.
 - [x] Non-verbal analysis (facial, eye, speech)
 - [x] Scientific confidence scoring
 - [x] Multi-language support (EN/ID)
-- [x] Weighted transcription confidence
 - [x] Aggregate reporting
 
-**In Progress:**
-- [ ] Enhanced AI assessment (replace rule-based scoring)
-- [ ] Real-time processing with WebSocket
-- [ ] Advanced emotion detection
-
 **Planned:**
-- [ ] Cloud deployment (AWS/GCP/Azure)
+
+- [ ] Cloud deployment
 - [ ] User authentication & authorization
-- [ ] Database integration (PostgreSQL)
-- [ ] Batch processing queue (Celery)
-- [ ] Email notifications
-- [ ] Mobile app (React Native)
-- [ ] Video resume generation
-- [ ] Interview coaching recommendations
 
 ---
 
