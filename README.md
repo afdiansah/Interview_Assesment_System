@@ -109,7 +109,6 @@ git clone <repo>
 cd Interview_Assesment_System-main\backend\Python
 python -m venv .venv && .venv\Scripts\activate
 
-
 # 2. Buka jupyter notebook dan masukkan tokenmu di cell yang berisi
 # DEEPL_API_KEY = "YOUR_API_KEY_HERE:fx"
 # HF_TOKEN = "hf_xxxxxxxxxxxxxxxxxxxx"
@@ -118,7 +117,10 @@ python -m venv .venv && .venv\Scripts\activate
 jupyter notebook interview_assessment_system.ipynb
 # Run all cells → Server starts on http://localhost:8888
 
-# 4. Open frontend
+# 4. Ubah di Upload.js dan Halaman_dasboard.js
+# BASE_URL = http://localhost:8888
+
+# 5. Open frontend
 # http://localhost:5500/Upload.html (via Live Server)
 ```
 
@@ -141,7 +143,10 @@ pip install -r requirements.txt  # atau run Cell 1 di notebook
 python main.py
 # Server starts on http://localhost:7860
 
-# 5. Open frontend
+# 5. Ubah di Upload.js dan Halaman_dasboard.js
+# BASE_URL = http://localhost:7860
+
+# 6. Open frontend
 # http://localhost:5500/Upload.html (via Live Server)
 ```
 
