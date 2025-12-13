@@ -6,9 +6,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![Whisper](https://img.shields.io/badge/Whisper-large--v3-orange.svg)](https://github.com/openai/whisper)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation](https://img.shields.io/badge/docs-MkDocs-blue.svg)](https://dapakyuu.github.io/Interview_Assesment_System-main/)
+[![Documentation](https://img.shields.io/badge/docs-MkDocs-blue.svg)](https://interview-assesment-system-docs.vercel.app/)
 
-> 📚 **[View Full Documentation](https://dapakyuu.github.io/Interview_Assesment_System-main/)** | [Quick Start](MKDOCS_GUIDE.md) | [API Reference](docs/api/endpoints.md)
+> 📚 **[View Full Documentation](https://interview-assesment-system-docs.vercel.app/)** | [Quick Start](https://interview-assesment-system.vercel.app/) | [API Reference](https://interview-assesment-system-docs.vercel.app/api/endpoints/)
 
 ## ✨ Key Features
 
@@ -49,6 +49,7 @@ jupyter notebook interview_assessment_system.ipynb
 ```bash
 # 2. Install (one command)
 pip install -r requirements.txt  # atau run Cell 1 di notebook
+# Ganti env.example menjadi .env dan masukkan tokenmu disana.
 
 # 3. Start server
 python main.py
@@ -136,6 +137,8 @@ source .venv/bin/activate
 # Install dependencies (atau jalankan cell 1 di notebook)
 pip -r requirements.txt
 # Note: numpy==1.26.4, torch, torchaudio harus sudah terinstall
+
+# Ganti env.example menjadi .env dan masukkan tokenmu disana.
 ```
 
 ### 3. DeepL API Setup (Translation EN↔ID)
@@ -145,6 +148,7 @@ pip -r requirements.txt
 3. Edit `interview_assessment_system.ipynb` cell yang berisi:
    ```python
    DEEPL_API_KEY = "YOUR_API_KEY_HERE:fx"
+   # Ganti env.example menjadi .env dan masukkan tokenmu disana.
    ```
 4. System akan auto-detect jika API key tidak valid dan skip translation
 5. Mendukung translasi English ↔ Indonesian bidirectional
@@ -158,6 +162,7 @@ pip -r requirements.txt
    ```python
    HF_TOKEN = "hf_xxxxxxxxxxxxxxxxxxxx"
    client = InferenceClient(api_key=HF_TOKEN)
+   # Ganti env.example menjadi .env dan masukkan tokenmu disana.
    ```
 4. **FREE TIER Benefits:**
    - Model: meta-llama/Llama-3.1-8B-Instruct
