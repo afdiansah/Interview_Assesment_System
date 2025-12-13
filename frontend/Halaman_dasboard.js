@@ -280,7 +280,8 @@ function updateCheatingConfidenceCard() {
   if (!confidenceCard || !interviewData?.aggregate_cheating_detection) return;
 
   const agg = interviewData.aggregate_cheating_detection;
-  const confScore = agg.avg_overall_confidence || 0;
+  const confScoreRaw = agg.avg_overall_confidence || 0;
+  const confScore = Number(confScoreRaw.toFixed(2)); // ✅ FIX
 
   // Determine color based on confidence level
   let confColor = "#28a745"; // Green
@@ -415,7 +416,9 @@ function updateNonVerbalConfidenceCard() {
   if (!confidenceCard || !interviewData?.aggregate_non_verbal_analysis) return;
 
   const agg = interviewData.aggregate_non_verbal_analysis;
-  const confScore = agg.overall_confidence_score || 0;
+
+  const confScoreRaw = agg.overall_confidence_score || 0;
+  const confScore = Number(confScoreRaw.toFixed(2)); // ✅ FIX
   const confLevel = agg.overall_performance_status || "N/A";
 
   let confColor = "#28a745";
@@ -536,7 +539,10 @@ function updateTranscriptionConfidenceCard() {
     }
   });
 
-  const avgConf = count > 0 ? (totalConf / count) : 0;
+
+  const avgConfRaw = count > 0 ? (totalConf / count) : 0;
+  const avgConf = Number(avgConfRaw.toFixed(2));
+
 
   let confColor = "#28a745";
   let bgColor = "#d4edda";
