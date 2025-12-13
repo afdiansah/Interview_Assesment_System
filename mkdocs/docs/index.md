@@ -13,69 +13,69 @@
 
 <div class="grid cards" markdown>
 
-- :material-microphone:{ .lg .middle } **98% Accurate Transcription**
+-   :material-microphone:{ .lg .middle } **98% Accurate Transcription**
 
-  ---
+    ***
 
-  Faster-Whisper large-v3 dengan confidence dari logprobs untuk hasil transcription berkualitas tinggi pada audio yang jernih.
+    Faster-Whisper large-v3 dengan confidence dari logprobs untuk hasil transcription berkualitas tinggi pada audio yang jernih.
 
-  [:octicons-arrow-right-24: Learn more](getting-started/introduction.md)
+    [:octicons-arrow-right-24: Learn more](getting-started/introduction.md)
 
-- :material-robot:{ .lg .middle } **LLM Assessment**
+-   :material-robot:{ .lg .middle } **LLM Assessment**
 
-  ---
+    ***
 
-  Hugging Face Llama 3.1-8B-Instruct untuk semantic answer evaluation dengan confidence scoring dan logprobs analysis.
+    Hugging Face Llama 3.1-8B-Instruct untuk semantic answer evaluation dengan confidence scoring dan logprobs analysis.
 
-  [:octicons-arrow-right-24: Learn more](features/overview.md#llm-powered-assessment)
+    [:octicons-arrow-right-24: Learn more](features/overview.md#llm-powered-assessment)
 
-- :material-shield-check:{ .lg .middle } **Cheating Detection**
+-   :material-shield-check:{ .lg .middle } **Cheating Detection**
 
-  ---
+    ***
 
-  Multi-modal detection: Visual (MediaPipe face mesh 468 landmarks, eye/head tracking) + Audio (Resemblyzer speaker diarization).
+    Multi-modal detection: Visual (MediaPipe face mesh 468 landmarks, eye/head tracking) + Audio (Resemblyzer speaker diarization).
 
-  [:octicons-arrow-right-24: Learn more](features/overview.md#cheating-detection)
+    [:octicons-arrow-right-24: Learn more](features/overview.md#cheating-detection)
 
-- :material-account-eye:{ .lg .middle } **Non-Verbal Analysis**
+-   :material-account-eye:{ .lg .middle } **Non-Verbal Analysis**
 
-  ---
+    ***
 
-  Scientific scoring untuk facial expressions, eye contact, blink rate, speech patterns dengan weighted confidence calculation.
+    Scientific scoring untuk facial expressions, eye contact, blink rate, speech patterns dengan weighted confidence calculation.
 
-  [:octicons-arrow-right-24: Learn more](features/overview.md#non-verbal-analysis)
+    [:octicons-arrow-right-24: Learn more](features/overview.md#non-verbal-analysis)
 
-- :material-translate:{ .lg .middle } **Bilingual Support**
+-   :material-translate:{ .lg .middle } **Bilingual Support**
 
-  ---
+    ***
 
-  English ↔ Indonesian translation via DeepL API dengan 98%+ accuracy (500k chars/month free tier).
+    English ↔ Indonesian translation via DeepL API dengan 98%+ accuracy (500k chars/month free tier).
 
-  [:octicons-arrow-right-24: Learn more](configuration/api-keys.md#deepl-setup)
+    [:octicons-arrow-right-24: Learn more](configuration/api-keys.md#deepl-setup)
 
-- :material-chart-line:{ .lg .middle } **Dashboard Analytics**
+-   :material-chart-line:{ .lg .middle } **Dashboard Analytics**
 
-  ---
+    ***
 
-  Interactive charts (Chart.js), aggregate reporting, comprehensive JSON results, dan PDF export capability.
+    Interactive charts (Chart.js), aggregate reporting, comprehensive JSON results, dan PDF export capability.
 
-  [:octicons-arrow-right-24: Learn more](getting-started/quickstart.md#dashboard-display)
+    [:octicons-arrow-right-24: Learn more](getting-started/quickstart.md#dashboard-display)
 
-- :material-google-drive:{ .lg .middle } **Google Drive Support**
+-   :material-google-drive:{ .lg .middle } **Google Drive Support**
 
-  ---
+    ***
 
-  Direct video download dari Google Drive URLs dengan auto file ID extraction menggunakan gdown library.
+    Direct video download dari Google Drive URLs dengan auto file ID extraction menggunakan gdown library.
 
-  [:octicons-arrow-right-24: Learn more](api/endpoints.md#upload-from-google-drive)
+    [:octicons-arrow-right-24: Learn more](api/endpoints.md#upload-from-google-drive)
 
-- :material-lightning-bolt:{ .lg .middle } **Fast Processing**
+-   :material-lightning-bolt:{ .lg .middle } **Fast Processing**
 
-  ---
+    ***
 
-  Background async processing: 1-3 min/video (GPU) atau 3-8 min/video (CPU) dengan auto-cleanup untuk hemat storage 99%+.
+    Background async processing: 1-3 min/video (GPU) atau 3-8 min/video (CPU) dengan auto-cleanup untuk hemat storage 99%+.
 
-  [:octicons-arrow-right-24: Learn more](troubleshooting/performance.md)
+    [:octicons-arrow-right-24: Learn more](troubleshooting/performance.md)
 
 </div>
 
@@ -203,37 +203,37 @@ graph TD
 
 <div class="grid cards" markdown>
 
-- :material-download:{ .lg .middle } **Installation**
+-   :material-download:{ .lg .middle } **Installation**
 
-  ---
+    ***
 
-  Complete step-by-step installation guide including FFmpeg setup dan virtual environment.
+    Complete step-by-step installation guide including FFmpeg setup dan virtual environment.
 
-  [:octicons-arrow-right-24: Installation Guide](getting-started/installation.md)
+    [:octicons-arrow-right-24: Installation Guide](getting-started/installation.md)
 
-- :material-book-open-variant:{ .lg .middle } **Features**
+-   :material-book-open-variant:{ .lg .middle } **Features**
 
-  ---
+    ***
 
-  Deep dive into semua fitur: transcription, cheating detection, non-verbal analysis, dan LLM assessment.
+    Deep dive into semua fitur: transcription, cheating detection, non-verbal analysis, dan LLM assessment.
 
-  [:octicons-arrow-right-24: Features Overview](features/overview.md)
+    [:octicons-arrow-right-24: Features Overview](features/overview.md)
 
-- :material-api:{ .lg .middle } **API Documentation**
+-   :material-api:{ .lg .middle } **API Documentation**
 
-  ---
+    ***
 
-  Complete API reference dengan request/response examples dan error handling.
+    Complete API reference dengan request/response examples dan error handling.
 
-  [:octicons-arrow-right-24: API Docs](api/endpoints.md)
+    [:octicons-arrow-right-24: API Docs](api/endpoints.md)
 
-- :material-wrench:{ .lg .middle } **Configuration**
+-   :material-wrench:{ .lg .middle } **Configuration**
 
-  ---
+    ***
 
-  Customize models, thresholds, API keys, dan advanced settings.
+    Customize models, thresholds, API keys, dan advanced settings.
 
-  [:octicons-arrow-right-24: Configuration](configuration/models.md)
+    [:octicons-arrow-right-24: Configuration](configuration/models.md)
 
 </div>
 
@@ -243,29 +243,29 @@ graph TD
 
 <div class="grid cards" markdown>
 
-- :material-github:{ .lg .middle } **GitHub Issues**
+-   :material-github:{ .lg .middle } **GitHub Issues**
 
-  ---
+    ***
 
-  Report bugs atau request features.
+    Report bugs atau request features.
 
-  [:octicons-arrow-right-24: Open Issue](https://github.com/dapakyuu/Interview_Assesment_System/issues)
+    [:octicons-arrow-right-24: Open Issue](https://github.com/dapakyuu/Interview_Assesment_System/issues)
 
-- :material-book-open:{ .lg .middle } **Documentation**
+-   :material-book-open:{ .lg .middle } **Documentation**
 
-  ---
+    ***
 
-  Browse comprehensive guides dan tutorials.
+    Browse comprehensive guides dan tutorials.
 
-  [:octicons-arrow-right-24: View Docs](getting-started/introduction.md)
+    [:octicons-arrow-right-24: View Docs](getting-started/introduction.md)
 
-- :material-frequently-asked-questions:{ .lg .middle } **FAQ**
+-   :material-frequently-asked-questions:{ .lg .middle } **FAQ**
 
-  ---
+    ***
 
-  Common questions dan troubleshooting.
+    Common questions dan troubleshooting.
 
-  [:octicons-arrow-right-24: View FAQ](troubleshooting/faq.md)
+    [:octicons-arrow-right-24: View FAQ](troubleshooting/faq.md)
 
 </div>
 
