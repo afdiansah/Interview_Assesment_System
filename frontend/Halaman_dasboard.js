@@ -3,9 +3,9 @@
 // =========================================================
 let interviewData = null;
 
-const API_BASE_URL = "https://zhephyr-be-interview-assesment-system.hf.space";
+ const API_BASE_URL = "https://zhephyr-be-interview-assesment-system.hf.space";
 // const API_BASE_URL =
-//   "https://884275faeb5a.ngrok-free.app";
+//   "https://e46ed84b123d.ngrok-free.app";
 
 // =========================================================
 // DATA LOADING
@@ -1098,8 +1098,7 @@ async function downloadPDF() {
 
   // Import jsPDF
   const script = document.createElement("script");
-  script.src =
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
   document.head.appendChild(script);
 
   script.onload = function () {
@@ -1113,66 +1112,76 @@ async function downloadPDF() {
     // 📐 Layout
     const tableX = 20;
     const tableWidth = 170;
-    const result = interviewData.content[0].result;
-    const aggregate = calculateAggregateData();
+    
+    // ✅ Akses data dari struktur baru
+    const llmResults = interviewData.llm_results;
+    const cheating = interviewData.aggregate_cheating_detection;
+    const nonverbal = interviewData.aggregate_non_verbal_analysis;
+    const content = interviewData.content;
+    
     let yPos = 10;
 
     // ===== HEADER =====
     doc.setFontSize(20);
     doc.setTextColor(...blue);
     doc.text("LAPORAN ANALISIS INTERVIEW", 105, yPos, { align: "center" });
-    yPos += 15;
+    yPos += 10;
+    
+    doc.setFontSize(12);
+    doc.text(`Kandidat: ${interviewData.name}`, 105, yPos, { align: "center" });
+    yPos += 5;
+    
     doc.setDrawColor(...blue);
     doc.line(20, yPos, 190, yPos);
     yPos += 10;
 
     // ===== RINGKASAN PENILAIAN =====
-    doc.setFontSize(14);
-    doc.setTextColor(...blue);
-    doc.text("Ringkasan Penilaian", 20, yPos);
-    yPos += 5;
-
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Rata-rata Skor: ${aggregate.avgTotal}`, 20, yPos);
-    doc.text(`Penilaian Akhir: ${result.penilaian_akhir}/5`, 80, yPos);
-    doc.text(`Keputusan: ${result.keputusan_akhir}`, 140, yPos);
-    yPos += 10;
-
-    // ===== SKOR PER ASPEK =====
-    yPos = drawTableHeader(
+    yPos = drawTableHeader(doc, "Ringkasan Penilaian", yPos, tableX, blue);
+    const summaryData = [
+      ["Rata-rata Skor Total", `${llmResults.avg_total_llm}/100`],
+      // ["Final Score (Weighted)", `${llmResults.final_score_llm.toFixed(1)}/100`],
+      // ["Rata-rata Confidence Score", `${llmResults.rata_rata_confidence_score}%`],
+      // ["Logprobs Confidence", `${llmResults.avg_logprobs_confidence.toFixed(2)}%`],
+    ];
+    yPos = drawTable(
       doc,
-      "Skor Per Aspek Kompetensi",
+      summaryData,
+      ["Metrik", "Nilai"],
       yPos,
       tableX,
-      blue
+      tableWidth,
+      blue,
+      cream
     );
+
+    // ===== KESIMPULAN LLM =====
+    yPos += 10;
+    if (yPos > 240) {
+      doc.addPage();
+      yPos = 25;
+    }
+    doc.setFontSize(10);
+    doc.setTextColor(...blue);
+    doc.text("Kesimpulan Analisis:", 20, yPos);
+    yPos += 5;
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    const conclusionLines = doc.splitTextToSize(llmResults.kesimpulan_llm, 170);
+    doc.text(conclusionLines, 20, yPos);
+    yPos += conclusionLines.length * 5 + 5;
+
+    // ===== SKOR PER ASPEK =====
+    yPos = drawTableHeader(doc, "Skor Per Aspek Kompetensi", yPos + 5, tableX, blue);
+    
+    // Hitung rata-rata dari semua pertanyaan
+    const avgKualitas = content.reduce((sum, item) => sum + item.result.penilaian.kualitas_jawaban, 0) / content.length;
+    const avgRelevansi = content.reduce((sum, item) => sum + item.result.penilaian.relevansi, 0) / content.length;
+    const avgKoherensi = content.reduce((sum, item) => sum + item.result.penilaian.koherensi, 0) / content.length;
+    
     const aspects = [
-      // [
-      //   "Confidence Score",
-      //   aggregate.avgConfidence,
-      //   getScoreCategoryText(aggregate.avgConfidence),
-      // ],
-      [
-        "Kualitas Jawaban",
-        aggregate.avgKualitas,
-        getScoreCategoryText(aggregate.avgKualitas),
-      ],
-      [
-        "Relevansi",
-        aggregate.avgRelevansi,
-        getScoreCategoryText(aggregate.avgRelevansi),
-      ],
-      [
-        "Koherensi",
-        aggregate.avgKoherensi,
-        getScoreCategoryText(aggregate.avgKoherensi),
-      ],
-      // [
-      //   "Tempo Bicara",
-      //   aggregate.avgTempo,
-      //   getScoreCategoryText(aggregate.avgTempo),
-      // ],
+      ["Kualitas Jawaban", avgKualitas.toFixed(1), getScoreCategoryText(avgKualitas)],
+      ["Relevansi", avgRelevansi.toFixed(1), getScoreCategoryText(avgRelevansi)],
+      ["Koherensi", avgKoherensi.toFixed(1), getScoreCategoryText(avgKoherensi)],
     ];
     yPos = drawTable(
       doc,
@@ -1185,19 +1194,21 @@ async function downloadPDF() {
       cream
     );
 
-    // ===== HASIL ANALISIS =====
-    yPos = drawTableHeader(doc, "Hasil Analisis", yPos + 10, tableX, blue);
-    const analysisData = [
-      ["Cheating Detection", result.cheating_detection || "Tidak"],
+    // ===== CHEATING DETECTION =====
+    yPos = drawTableHeader(doc, "Deteksi Kecurangan", yPos + 10, tableX, blue);
+    const cheatingData = [
+      ["Final Verdict", cheating.final_aggregate_verdict],
+      ["Risk Level", cheating.risk_level],
+      ["Avg Cheating Score", `${cheating.avg_cheating_score}%`],
+      ["Visual Confidence", `${cheating.avg_visual_confidence.toFixed(2)}%`],
+      ["Audio Confidence", `${cheating.avg_audio_confidence}%`],
+      ["Overall Confidence", `${cheating.avg_overall_confidence.toFixed(2)}%`],
+      ["Suspicious Frames", cheating.total_suspicious_frames.toString()],
     ];
-    if (result.alasan_cheating) {
-      analysisData.push(["Alasan Cheating", result.alasan_cheating]);
-    }
-    analysisData.push(["Analisis Non-Verbal", result.analisis_non_verbal]);
     yPos = drawTable(
       doc,
-      analysisData,
-      ["Kategori", "Hasil"],
+      cheatingData,
+      ["Metrik", "Nilai"],
       yPos,
       tableX,
       tableWidth,
@@ -1205,6 +1216,28 @@ async function downloadPDF() {
       cream
     );
 
+    // ===== ANALISIS NON-VERBAL =====
+    yPos += 10;
+    if (yPos > 240) {
+      doc.addPage();
+      yPos = 25;
+    }
+    yPos = drawTableHeader(doc, "Analisis Non-Verbal", yPos, tableX, blue);
+    const nonverbalData = [
+      ["Overall Performance", nonverbal.overall_performance_status],
+      ["Confidence Score", `${nonverbal.overall_confidence_score.toFixed(2)}%`],
+    ];
+    yPos = drawTable(
+      doc,
+      nonverbalData,
+      ["Aspek", "Nilai"],
+      yPos,
+      tableX,
+      tableWidth,
+      blue,
+      cream
+    );
+    
     // ===== DETAIL PERTANYAAN =====
     yPos += 10;
     if (yPos > 240) {
@@ -1213,19 +1246,16 @@ async function downloadPDF() {
     }
     doc.setFontSize(12);
     doc.setTextColor(...blue);
-    doc.text(
-      `Detail Pertanyaan (${interviewData.content.length} Pertanyaan)`,
-      20,
-      yPos
-    );
+    doc.text(`Detail Pertanyaan (${content.length} Pertanyaan)`, 20, yPos);
     yPos += 7.5;
 
-    interviewData.content.forEach((item, idx) => {
-      if (yPos > 240) {
+    content.forEach((item, idx) => {
+      if (yPos > 230) {
         doc.addPage();
         yPos = 25;
       }
 
+      // Pertanyaan
       doc.setFontSize(10);
       doc.setTextColor(45, 55, 72);
       doc.text(`Pertanyaan ${idx + 1}:`, 20, yPos);
@@ -1234,15 +1264,15 @@ async function downloadPDF() {
       doc.setFontSize(9);
       const qLines = doc.splitTextToSize(item.question, 170);
       doc.text(qLines, 20, yPos);
-      yPos += qLines.length * 5 + 5;
+      yPos += qLines.length * 5 + 3;
 
+      // Skor per aspek
       const scores = [
-        // ["Confidence Score", item.result.penilaian.confidence_score],
-        ["Kualitas Jawaban", item.result.penilaian.kualitas_jawaban],
-        ["Relevansi", item.result.penilaian.relevansi],
-        ["Koherensi", item.result.penilaian.koherensi],
-        // ["Tempo Bicara", item.result.penilaian.tempo_bicara],
-        ["Total Skor", item.result.penilaian.total],
+        ["Kualitas Jawaban", item.result.penilaian.kualitas_jawaban.toString()],
+        ["Relevansi", item.result.penilaian.relevansi.toString()],
+        ["Koherensi", item.result.penilaian.koherensi.toString()],
+        ["Total Score", item.result.penilaian.total.toString()],
+        ["Confidence Score", `${item.result.penilaian.confidence_score}%`],
       ];
       yPos = drawTable(
         doc,
@@ -1254,7 +1284,16 @@ async function downloadPDF() {
         blue,
         cream
       );
-      yPos += 8;
+      
+      // Analisis LLM
+      yPos += 5;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text("Analisis:", 20, yPos);
+      yPos += 4;
+      const analysisLines = doc.splitTextToSize(item.result.penilaian.analisis_llm, 170);
+      doc.text(analysisLines, 20, yPos);
+      yPos += analysisLines.length * 5 + 8;
     });
 
     // ===== FOOTER =====
@@ -1269,15 +1308,80 @@ async function downloadPDF() {
         285,
         { align: "center" }
       );
-      doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")}`, 105, 290, {
+      doc.text(`Session: ${interviewData.session}`, 105, 290, {
         align: "center",
       });
       doc.text(`Halaman ${i} dari ${pageCount}`, 190, 290, { align: "right" });
     }
 
     // ===== DOWNLOAD =====
-    doc.save(`interview_report_${new Date().getTime()}.pdf`);
+    const filename = `interview_report_${interviewData.name}_${new Date().getTime()}.pdf`;
+    doc.save(filename);
   };
+}
+
+// Helper function untuk kategori skor
+function getScoreCategoryText(score) {
+  if (score >= 90) return "Sangat Baik";
+  if (score >= 80) return "Baik";
+  if (score >= 70) return "Cukup";
+  if (score >= 60) return "Kurang";
+  return "Sangat Kurang";
+}
+
+// Helper functions untuk drawing (unchanged)
+function drawTableHeader(doc, title, yPos, tableX, blue) {
+  if (yPos > 250) {
+    doc.addPage();
+    yPos = 25;
+  }
+  doc.setFontSize(12);
+  doc.setTextColor(...blue);
+  doc.text(title, tableX, yPos);
+  return yPos + 7;
+}
+
+function drawTable(doc, data, headers, yPos, tableX, tableWidth, blue, cream) {
+  const colWidth = tableWidth / headers.length;
+  const rowHeight = 7;
+
+  // Header
+  doc.setFillColor(...cream);
+  doc.rect(tableX, yPos, tableWidth, rowHeight, "F");
+  doc.setFontSize(9);
+  doc.setTextColor(...blue);
+  
+  headers.forEach((header, i) => {
+    doc.text(header, tableX + i * colWidth + 2, yPos + 5);
+  });
+  yPos += rowHeight;
+
+  // Rows
+  doc.setTextColor(0, 0, 0);
+  data.forEach((row, idx) => {
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 25;
+    }
+
+    if (idx % 2 === 0) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(tableX, yPos, tableWidth, rowHeight, "F");
+    }
+
+    row.forEach((cell, i) => {
+      const cellText = cell.toString();
+      const maxWidth = colWidth - 4;
+      const lines = doc.splitTextToSize(cellText, maxWidth);
+      doc.text(lines, tableX + i * colWidth + 2, yPos + 5);
+    });
+    yPos += rowHeight;
+  });
+
+  doc.setDrawColor(...blue);
+  doc.rect(tableX, yPos - data.length * rowHeight - rowHeight, tableWidth, (data.length + 1) * rowHeight);
+
+  return yPos;
 }
 
 // =========================================
