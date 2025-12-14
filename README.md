@@ -55,6 +55,7 @@
 
      ```json
      {
+       "success": true,
        "data": {
          "candidate": {
            "name": "xxx"
@@ -1410,3 +1411,4 @@ MIT License - Feel free to modify and use for commercial/personal projects.
 ---
 
 **Built with ❤️ using FastAPI, Whisper, DeepL, and modern web technologies.**
+
